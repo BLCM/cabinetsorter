@@ -96,6 +96,7 @@ class DirInfo(object):
         self.lower_mapping = {}
         self.extension_map = {}
         self.no_extension = []
+        self.readme = None
         for n in filenames:
             lower = n.lower()
             if '.' in lower:
@@ -107,6 +108,13 @@ class DirInfo(object):
             else:
                 self.no_extension.append(lower)
             self.lower_mapping[lower] = os.path.join(dirpath, n)
+
+            # We're assuming there'll only be one README in any given
+            # dir, which is probably safe enough, and I don't think I
+            # care enough to try and prioritize, in dirs where there
+            # might be more than one
+            if 'readme' in lower:
+                self.readme = self.lower_mapping[lower]
 
     def __getitem__(self, key):
         """
@@ -189,6 +197,8 @@ class ModFile(object):
                     self.load_ft(df)
                 else:
                     self.load_unknown(df)
+            if len(self.mod_desc) == 0:
+                self.mod_desc.append('(no description found)')
         else:
             # This is used when deserializing
             self.seen = False
@@ -364,6 +374,10 @@ class ModFile(object):
 
         # Prevent adding more than one empty line in a row
         if len(self.mod_desc) > 0 and self.mod_desc[-1] == '' and line == '':
+            return
+
+        # Attempt to prevent adding in header ASCII art
+        if len(self.mod_desc) == 0 and line.strip("_/\\.:|#~ \t") == '':
             return
 
         # Attempt to match on a title, if we can (and return without adding,
