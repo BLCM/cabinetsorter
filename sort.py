@@ -50,6 +50,7 @@ categories = collections.OrderedDict([
         ('cheats', 'Cheat Mods'),
         ('wip', 'Works in Progress'),
         ('resources', 'Modder\'s Resources'),
+        ('misc', 'Miscellaneous Mods'),
         ])
 
 class Re(object):
@@ -129,6 +130,12 @@ class DirInfo(object):
         """
         return key.lower() in self.lower_mapping
 
+    def get_all(self):
+        """
+        Returns all files
+        """
+        return self.lower_mapping.keys()
+
     def get_all_with_ext(self, extension):
         """
         Returns all files with the given extension
@@ -192,8 +199,10 @@ class ModFile(object):
             self.full_filename = dirinfo[filename]
             (self.rel_path, self.rel_filename) = dirinfo.get_rel_path(filename)
             self.mod_author = dirinfo.dir_author
-            with open(self.full_filename) as df:
+            with open(self.full_filename, encoding='latin1') as df:
                 first_line = df.readline()
+                if first_line.strip() == '':
+                    first_line = df.readline()
                 if '<BLCMM' in first_line:
                     self.load_blcmm(df)
                 elif first_line.startswith('#<'):
@@ -499,9 +508,7 @@ class Readme(object):
                         self.mapping[cur_section] = []
                     else:
                         self.mapping[cur_section].append(line)
-                elif not is_markdown and line.startswith('-'):
-                    # Only want to match on this for non-markdown, since in
-                    # Markdown it's likely to be a list.
+                elif line.startswith('-'):
                     cur_section = line.lstrip("- \t").lower()
                     self.mapping[cur_section] = []
                 else:
@@ -650,6 +657,19 @@ for (game_prefix, game_name) in games.items():
                                 processed_file = mod_cache.load(dirinfo, blcm_file)
                                 # We're just going to always take the very first .blcm file we find
                                 break
+                            if not processed_file:
+                                for txt_file in dirinfo.get_all_with_ext('txt'):
+                                    if 'readme' not in txt_file.lower():
+                                        processed_file = mod_cache.load(dirinfo, txt_file)
+                                        # Again, just grab the first one
+                                        break
+                            if not processed_file:
+                                for random_file in dirinfo.get_all():
+                                    if 'readme' not in random_file.lower():
+                                        processed_file = mod_cache.load(dirinfo, random_file)
+                                        # Again, just grab the first one
+                                        break
+
 
                         # If we successfully loaded, do Stuff.
                         if processed_file:
@@ -657,7 +677,7 @@ for (game_prefix, game_name) in games.items():
                             # See if we've got a "better" description in a readme
                             if readme:
                                 readme_info = readme.find_matching(processed_file.mod_title, single_mod)
-                                if len(readme_info) > len(processed_file.mod_desc):
+                                if sum([len(l) for l in readme_info]) > sum([len(l) for l in processed_file.mod_desc]):
                                     processed_file.update_desc(readme_info)
 
                             # Split up the category list and assign it
@@ -695,7 +715,7 @@ for filename in to_delete:
     del mod_cache[filename]
 
 for mod in mod_cache.values():
-    if mod.status == ModFile.S_NEW:
+    if mod.status == ModFile.S_NEW or mod.status == ModFile.S_UPDATED:
         print('{} ({})'.format(mod.rel_filename, ModFile.S_ENG[mod.status]))
         print(mod.mod_title)
         print(mod.mod_author)
