@@ -35,6 +35,7 @@ games = {
         }
 cabinet_dir = '/home/pez/git/b2patching/ModSorted.wiki'
 cache_filename = 'modcache.json.xz'
+readme_cache_filename = 'readmecache.json.xz'
 
 categories = collections.OrderedDict([
         ('general', 'General Gameplay and Balance'),
@@ -158,6 +159,8 @@ class ModFile(object):
     """
     Class to pull info out of a mod file.
     """
+
+    cache_category = 'mods'
 
     (S_UNKNOWN,
             S_CACHED,
@@ -287,6 +290,16 @@ class ModFile(object):
         self.screenshots = screenshots
         self.nexus_link = nexus_link
 
+    def update_desc(self, new_desc):
+        """
+        Updates our description with the given array (almost certainly from
+        a README)
+        """
+        self.seen = True
+        if self.status != ModFile.S_NEW and new_desc != self.mod_desc:
+            self.status = ModFile.S_UPDATED
+        self.mod_desc = new_desc
+
     def load_blcmm(self, df):
         """
         Loads in a BLCMM-formatted file.  The idea is to grab the first category
@@ -390,9 +403,115 @@ class ModFile(object):
         # Finally, add it in.
         self.mod_desc.append(line)
 
+class Readme(object):
+    """
+    Class to hold information about README files.  We're mostly just trying
+    to find anything that might be a heading or list entry, so we can
+    match on it later.  Trying to make this work more or less equally
+    well whether it's markdown or plaintext.
+    """
+
+    cache_category = 'readmes'
+
+    def __init__(self, mtime, filename=None):
+        self.mapping = {'(default)': []}
+        self.mtime = mtime
+        if filename:
+            self.read_file(filename)
+            self.filename = filename
+        else:
+            self.filename = None
+
+    def find_matching(self, mod_name, single_mod=True):
+        """
+        Tries to find a matching section in the readme, given the specified
+        `mod_name`.  If `single_mod` is True, the README is expected to be
+        for a single mod in the dir.  If False, it is assumed to be in a dir
+        containing multiple mods
+        """
+        mod_name_lower = mod_name.lower()
+        if single_mod:
+            if 'overview' in self.mapping:
+                return self.mapping['overview']
+            for section in self.mapping.keys():
+                if Levenshtein.ratio(mod_name_lower, section) > .8:
+                    return self.mapping[section]
+            return self.mapping['(default)']
+        else:
+            for section in self.mapping.keys():
+                if Levenshtein.ratio(mod_name_lower, section) > .8:
+                    return self.mapping[section]
+            return []
+
+
+    def serialize(self):
+        """
+        Returns a serializable dict describing ourselves (since we're
+        basically just a glorified dict anyway, this is pretty trivial)
+        """
+        return {
+                'f': self.filename,
+                'm': self.mtime,
+                'd': self.mapping,
+                }
+
+    @staticmethod
+    def unserialize(input_dict):
+        """
+        Creates a new Readme given the specified serialized dict
+        """
+        new_readme = Readme(input_dict['m'])
+        new_readme.filename = input_dict['f']
+        new_readme.mapping = input_dict['d']
+        return new_readme
+
+    def read_file(self, filename):
+        """
+        Attempt to parse the given filename
+        """
+        if filename.lower().endswith('.md'):
+            is_markdown = True
+        else:
+            is_markdown = False
+        with open(filename) as df:
+            prev_line = None
+            cur_section = '(default)'
+            for line in df.readlines():
+                line = line.strip()
+                if line.startswith('#'):
+                    cur_section = line.lstrip("# \t").lower()
+                    self.mapping[cur_section] = []
+                elif line.startswith('==='):
+                    # Multiline markdown section highlighting.  Annoying!  A
+                    # shame I personally use it all the time, eh?
+                    if prev_line:
+                        self.mapping[cur_section].pop()
+                        cur_section = prev_line.strip().lower()
+                        self.mapping[cur_section] = []
+                    else:
+                        self.mapping[cur_section].append(line)
+                elif line.startswith('---'):
+                    # Multiline markdown section highlighting.  Annoying!  A
+                    # shame I personally use it all the time, eh?
+                    if prev_line:
+                        self.mapping[cur_section].pop()
+                        cur_section = prev_line.strip().lower()
+                        self.mapping[cur_section] = []
+                    else:
+                        self.mapping[cur_section].append(line)
+                elif not is_markdown and line.startswith('-'):
+                    # Only want to match on this for non-markdown, since in
+                    # Markdown it's likely to be a list.
+                    cur_section = line.lstrip("- \t").lower()
+                    self.mapping[cur_section] = []
+                else:
+                    if len(self.mapping[cur_section]) > 0 or line != '':
+                        self.mapping[cur_section].append(line)
+                prev_line = line
+
 class ModCache(object):
     """
-    Object to hold info about mod files.
+    Class to hold info about mod files (and, incidentally, README files).
     """
 
     def __init__(self, filename):
@@ -401,8 +520,10 @@ class ModCache(object):
         if os.path.exists(filename):
             with lzma.open(filename, 'rt', encoding='utf-8') as df:
                 serialized_dict = json.load(df)
-                for (mod_filename, mod_dict) in serialized_dict.items():
+                for (mod_filename, mod_dict) in serialized_dict['mods'].items():
                     self.mapping[mod_filename] = ModFile.unserialize(mod_dict)
+                for (readme_filename, readme_dict) in serialized_dict['readmes'].items():
+                    self.mapping[readme_filename] = Readme.unserialize(readme_dict)
 
     def load(self, dirinfo, filename):
         """
@@ -420,13 +541,22 @@ class ModCache(object):
             self.mapping[full_filename] = ModFile(mtime, dirinfo, filename, initial_status)
         return self.mapping[full_filename]
 
+    def load_readme(self, filename):
+        """
+        Loads a README from the given `filename` (which should be a full path).
+        """
+        mtime = os.stat(filename).st_mtime
+        if filename not in self.mapping or mtime != self.mapping[filename].mtime:
+            self.mapping[filename] = Readme(mtime, filename)
+        return self.mapping[filename]
+
     def save(self):
         """
         Saves ourself
         """
-        save_dict = {}
+        save_dict = {'mods': {}, 'readmes': {}}
         for mod_filename, mod in self.mapping.items():
-            save_dict[mod_filename] = mod.serialize()
+            save_dict[mod.cache_category][mod_filename] = mod.serialize()
         with lzma.open(self.filename, 'wt', encoding='utf-8') as df:
             json.dump(save_dict, df)
 
@@ -468,6 +598,7 @@ class ModCache(object):
 
 # Some initial vars
 mod_cache = ModCache(cache_filename)
+readme_cache = ModCache(readme_cache_filename)
 error_list = []
 
 # Loop through our game dirs
@@ -482,11 +613,19 @@ for (game_prefix, game_name) in games.items():
         # Read our info file, if we have it.
         if 'cabinet.info' in dirinfo:
 
+            # Load in readme info, if we can.
+            readme = None
+            if dirinfo.readme:
+                readme = readme_cache.load_readme(dirinfo.readme)
+
             # Read the file info
             cabinet_filename = dirinfo['cabinet.info']
             rel_cabinet_filename = cabinet_filename[len(repo_dir)+1:]
             with open(cabinet_filename) as df:
                 prev_modfile = None
+                single_mod = False
+
+                # Now read cabinet.info to find mod files
                 for line in df.readlines():
                     if line.strip() == '' or line.startswith('#'):
                         pass
@@ -503,6 +642,7 @@ for (game_prefix, game_name) in games.items():
                             (mod_filename, categories) = line.split(': ', 1)
                             processed_file = mod_cache.load(dirinfo, mod_filename)
                         else:
+                            single_mod = True
                             categories = line
                             # Scan for which file to use -- just a single mod file in
                             # this dir.  First look for .blcm files.
@@ -511,8 +651,16 @@ for (game_prefix, game_name) in games.items():
                                 # We're just going to always take the very first .blcm file we find
                                 break
 
-                        # Split up the category list and assign it
+                        # If we successfully loaded, do Stuff.
                         if processed_file:
+
+                            # See if we've got a "better" description in a readme
+                            if readme:
+                                readme_info = readme.find_matching(processed_file.mod_title, single_mod)
+                                if len(readme_info) > len(processed_file.mod_desc):
+                                    processed_file.update_desc(readme_info)
+
+                            # Split up the category list and assign it
                             real_cats = []
                             for name in categories:
                                 cats = [c.strip() for c in categories.lower().split(',')]
@@ -547,19 +695,20 @@ for filename in to_delete:
     del mod_cache[filename]
 
 for mod in mod_cache.values():
-    print('{} ({})'.format(mod.rel_filename, ModFile.S_ENG[mod.status]))
-    print(mod.mod_title)
-    print(mod.mod_author)
-    print(mod.mod_time)
-    print(mod.mod_desc)
-    print('Categories: {}'.format(mod.categories))
-    if mod.nexus_link:
-        print('Nexus Link: {}'.format(mod.nexus_link))
-    if len(mod.screenshots) > 0:
-        print('Screenshots:')
-        for ss in mod.screenshots:
-            print(' * {}'.format(ss))
-    print('--')
+    if mod.status == ModFile.S_NEW:
+        print('{} ({})'.format(mod.rel_filename, ModFile.S_ENG[mod.status]))
+        print(mod.mod_title)
+        print(mod.mod_author)
+        print(mod.mod_time)
+        print(mod.mod_desc)
+        print('Categories: {}'.format(mod.categories))
+        if mod.nexus_link:
+            print('Nexus Link: {}'.format(mod.nexus_link))
+        if len(mod.screenshots) > 0:
+            print('Screenshots:')
+            for ss in mod.screenshots:
+                print(' * {}'.format(ss))
+        print('--')
 
 # Report on any errors
 if len(error_list) > 0:
@@ -571,3 +720,4 @@ else:
 
 # Write out our mod cache
 mod_cache.save()
+readme_cache.save()
