@@ -5,6 +5,9 @@ import unittest
 from cabinetsorter.app import ModFile
 
 class ModFileCommentTests(unittest.TestCase):
+    """
+    Testing our add_comment_line method
+    """
 
     def setUp(self):
         """
