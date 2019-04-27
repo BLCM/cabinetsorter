@@ -307,12 +307,19 @@ class ModFile(object):
                     self.mod_title = self.re.last_match.group(1)
                     finding_main_cat = False
             else:
-                if self.re.search(cat_re, line):
+                stripped = line.strip()
+                if '#<hotfix>' not in line and self.re.search(cat_re, line):
+                    # Unlike the BLCMM processing, at the moment, we're not allowing
+                    # comments after nested categories, though we *are* if there's
+                    # a "description" folder, since that's a real common way that
+                    # FT files get laid out.
                     if 'description' not in self.re.last_match.group(1).lower():
                         return
-                elif line.strip().startswith('set '):
+                elif stripped.startswith('set '):
                     return
-                else:
+                elif stripped.startswith('#<hotfix>'):
+                    return
+                elif stripped != '':
                     self.add_comment_line(line)
 
     def load_unknown(self, df):
