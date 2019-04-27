@@ -445,38 +445,53 @@ class Readme(object):
         else:
             is_markdown = False
         with open(filename) as df:
-            prev_line = None
-            cur_section = '(default)'
-            for line in df.readlines():
-                line = line.strip()
-                if line.startswith('#'):
-                    cur_section = line.lstrip("# \t").lower()
-                    self.mapping[cur_section] = []
-                elif line.startswith('==='):
-                    # Multiline markdown section highlighting.  Annoying!  A
-                    # shame I personally use it all the time, eh?
-                    if prev_line:
-                        self.mapping[cur_section].pop()
-                        cur_section = prev_line.strip().lower()
-                        self.mapping[cur_section] = []
-                    else:
-                        self.mapping[cur_section].append(line)
-                elif line.startswith('---'):
-                    # Multiline markdown section highlighting.  Annoying!  A
-                    # shame I personally use it all the time, eh?
-                    if prev_line:
-                        self.mapping[cur_section].pop()
-                        cur_section = prev_line.strip().lower()
-                        self.mapping[cur_section] = []
-                    else:
-                        self.mapping[cur_section].append(line)
-                elif line.startswith('-'):
-                    cur_section = line.lstrip("- \t").lower()
+            self.read_file_obj(df, is_markdown)
+
+    def read_file_obj(self, df, is_markdown):
+        """
+        Read our file from an open filehandle.  At the
+        moment `is_markdown` isn't actually used anymore,
+        though we may want to do that at some point.  This
+        was split off from `read_file` mostly just for ease
+        of unit-testing.
+        """
+        prev_line = None
+        cur_section = '(default)'
+        for line in df.readlines():
+            line = line.strip()
+            if line.startswith('#'):
+                cur_section = line.lstrip("# \t").lower()
+                self.mapping[cur_section] = []
+            elif line.startswith('==='):
+                # Multiline markdown section highlighting.  Annoying!  A
+                # shame I personally use it all the time, eh?
+                if prev_line:
+                    self.mapping[cur_section].pop()
+                    cur_section = prev_line.strip().lower()
                     self.mapping[cur_section] = []
                 else:
-                    if len(self.mapping[cur_section]) > 0 or line != '':
-                        self.mapping[cur_section].append(line)
-                prev_line = line
+                    self.mapping[cur_section].append(line)
+            elif line.startswith('---'):
+                # Multiline markdown section highlighting.  Annoying!  A
+                # shame I personally use it all the time, eh?
+                if prev_line:
+                    self.mapping[cur_section].pop()
+                    cur_section = prev_line.strip().lower()
+                    self.mapping[cur_section] = []
+                else:
+                    self.mapping[cur_section].append(line)
+            elif line.startswith('-'):
+                cur_section = line.lstrip("- \t").lower()
+                self.mapping[cur_section] = []
+            else:
+                if len(self.mapping[cur_section]) > 0 or line != '':
+                    self.mapping[cur_section].append(line)
+            prev_line = line
+
+        # Get rid of any trailing empty lines in each section
+        for (section, data) in self.mapping.items():
+            while len(data) > 0 and data[-1] == '':
+                data.pop()
 
 class ModCache(object):
     """
