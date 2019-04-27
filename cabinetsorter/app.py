@@ -9,50 +9,6 @@ import datetime
 import collections
 import Levenshtein
 
-# TODO: Loop through the git checkout dir and manually assign timestamps based
-# on the most recent git commit, since otherwise timestamps are based on when
-# they were pulled in to the local filesystem.  Will have to be careful about
-# that in the future.  Once this is in a position of running every N minutes
-# or whatever, I don't think we'd have to worry about bothering to re-sync
-# things after the fact, but we'll need the initial run.  To get the most
-# recent commit timestamp from a file, in a format that `touch` recognizes:
-#
-#    git log -n 1 --format='%cI' filename
-#
-# To set the timestamp, of course:
-#
-#    touch -d (date) filename
-#
-# Or, all at once:
-#
-#    touch -d "$(git log -n 1 --format='%cI' filename)" filename
-
-# Dirs that we're looking into, and dirs that we're writing to
-repo_dir = '/home/pez/git/b2patching/BLCMods.direct'
-games = {
-        'BL2': 'Borderlands 2 mods',
-        'TPS': 'Pre Sequel Mods',
-        }
-cabinet_dir = '/home/pez/git/b2patching/ModSorted.wiki'
-cache_filename = 'modcache.json.xz'
-readme_cache_filename = 'readmecache.json.xz'
-
-categories = collections.OrderedDict([
-        ('general', 'General Gameplay and Balance'),
-        ('skills', 'Characters and Skills'),
-        ('farming', 'Farming and Looting'),
-        ('gear', 'Weapons and Gear'),
-        ('tools', 'Tools and Misc'),
-        ('gamemodes', 'Game Modes'),
-        ('overhauls', 'Overhauls'),
-        ('qol', 'Quality of Life'),
-        ('skins', 'Visuals and Standalone Skins'),
-        ('cheats', 'Cheat Mods'),
-        ('wip', 'Works in Progress'),
-        ('resources', 'Modder\'s Resources'),
-        ('misc', 'Miscellaneous Mods'),
-        ])
-
 class Re(object):
     """
     Class to allow us to use a Perl-like regex-comparison idiom
@@ -82,13 +38,13 @@ class DirInfo(object):
     and provide some useful methods to get at it.
     """
 
-    def __init__(self, dirpath, filenames):
+    def __init__(self, repo_dir, dirpath, filenames):
         """
         Initialize given our current dir path, and a list of filenames
         """
-        global repo_dir
+        self.repo_dir = repo_dir
         self.dirpath = dirpath
-        self.rel_dirpath = dirpath[len(repo_dir)+1:]
+        self.rel_dirpath = dirpath[len(self.repo_dir)+1:]
         path_components = self.rel_dirpath.split(os.sep)
         if len(path_components) > 1:
             self.dir_author = path_components[1]
@@ -156,10 +112,9 @@ class DirInfo(object):
         Returns a tuple with the relative path to the directory containing
         the given file, and the relative path to the file itself
         """
-        global repo_dir
         return (
             self.rel_dirpath,
-            self[filename][len(repo_dir)+1:],
+            self[filename][len(self.repo_dir)+1:],
             )
 
 class ModFile(object):
@@ -603,141 +558,178 @@ class ModCache(object):
         """
         del self.mapping[key]
 
-# Some initial vars
-mod_cache = ModCache(cache_filename)
-readme_cache = ModCache(readme_cache_filename)
-error_list = []
+class App(object):
+    """
+    Main app
+    """
 
-# Loop through our game dirs
-for (game_prefix, game_name) in games.items():
-    game_dir = os.path.join(repo_dir, game_name)
-    for (dirpath, dirnames, filenames) in os.walk(game_dir):
+    # Dirs that we're looking into, and dirs that we're writing to
+    repo_dir = '/home/pez/git/b2patching/BLCMods.direct'
+    games = {
+            'BL2': 'Borderlands 2 mods',
+            'TPS': 'Pre Sequel Mods',
+            }
+    cabinet_dir = '/home/pez/git/b2patching/ModSorted.wiki'
+    cache_filename = 'cache/modcache.json.xz'
+    readme_cache_filename = 'cache/readmecache.json.xz'
 
-        # Make a mapping of files by lower-case, so that we can
-        # match case-insensitively
-        dirinfo = DirInfo(dirpath, filenames)
+    categories = collections.OrderedDict([
+            ('general', 'General Gameplay and Balance'),
+            ('skills', 'Characters and Skills'),
+            ('farming', 'Farming and Looting'),
+            ('gear', 'Weapons and Gear'),
+            ('tools', 'Tools and Misc'),
+            ('gamemodes', 'Game Modes'),
+            ('overhaul', 'Overhauls'),
+            ('qol', 'Quality of Life'),
+            ('skins', 'Visuals and Standalone Skins'),
+            ('cheats', 'Cheat Mods'),
+            ('wip', 'Works in Progress'),
+            ('resources', 'Modder\'s Resources'),
+            ('misc', 'Miscellaneous Mods'),
+            ])
 
-        # Read our info file, if we have it.
-        if 'cabinet.info' in dirinfo:
+    def __init__(self):
 
-            # Load in readme info, if we can.
-            readme = None
-            if dirinfo.readme:
-                readme = readme_cache.load_readme(dirinfo.readme)
+        # Some initial vars
+        self.mod_cache = ModCache(self.cache_filename)
+        self.readme_cache = ModCache(self.readme_cache_filename)
+        self.error_list = []
 
-            # Read the file info
-            cabinet_filename = dirinfo['cabinet.info']
-            rel_cabinet_filename = cabinet_filename[len(repo_dir)+1:]
-            with open(cabinet_filename) as df:
-                prev_modfile = None
-                single_mod = False
+    def run(self):
+        """
+        Run the app
+        """
 
-                # Now read cabinet.info to find mod files
-                for line in df.readlines():
-                    if line.strip() == '' or line.startswith('#'):
-                        pass
-                    elif line.startswith('http://') or line.startswith('https://'):
-                        if prev_modfile:
-                            prev_modfile.add_url(line.strip())
-                        else:
-                            error_list.append('ERROR: Did not find previous modfile but got URL, in {}'.format(rel_cabinet_filename))
-                    else:
+        # Loop through our game dirs
+        for (game_prefix, game_name) in self.games.items():
+            game_dir = os.path.join(self.repo_dir, game_name)
+            for (dirpath, dirnames, filenames) in os.walk(game_dir):
+
+                # Make a mapping of files by lower-case, so that we can
+                # match case-insensitively
+                dirinfo = DirInfo(self.repo_dir, dirpath, filenames)
+
+                # Read our info file, if we have it.
+                if 'cabinet.info' in dirinfo:
+
+                    # Load in readme info, if we can.
+                    readme = None
+                    if dirinfo.readme:
+                        readme = self.readme_cache.load_readme(dirinfo.readme)
+
+                    # Read the file info
+                    cabinet_filename = dirinfo['cabinet.info']
+                    rel_cabinet_filename = cabinet_filename[len(self.repo_dir)+1:]
+                    with open(cabinet_filename) as df:
+                        prev_modfile = None
+                        single_mod = False
+
+                        # Now read cabinet.info to find mod files
+                        for line in df.readlines():
+                            if line.strip() == '' or line.startswith('#'):
+                                pass
+                            elif line.startswith('http://') or line.startswith('https://'):
+                                if prev_modfile:
+                                    prev_modfile.add_url(line.strip())
+                                else:
+                                    self.error_list.append('ERROR: Did not find previous modfile but got URL, in {}'.format(rel_cabinet_filename))
+                            else:
+                                if prev_modfile:
+                                    prev_modfile.finalize_urls()
+                                processed_file = None
+                                if ': ' in line:
+                                    (mod_filename, mod_categories) = line.split(': ', 1)
+                                    processed_file = self.mod_cache.load(dirinfo, mod_filename)
+                                else:
+                                    single_mod = True
+                                    mod_categories = line
+                                    # Scan for which file to use -- just a single mod file in
+                                    # this dir.  First look for .blcm files.
+                                    for blcm_file in dirinfo.get_all_with_ext('blcm'):
+                                        processed_file = self.mod_cache.load(dirinfo, blcm_file)
+                                        # We're just going to always take the very first .blcm file we find
+                                        break
+                                    if not processed_file:
+                                        for txt_file in dirinfo.get_all_with_ext('txt'):
+                                            if 'readme' not in txt_file.lower():
+                                                processed_file = self.mod_cache.load(dirinfo, txt_file)
+                                                # Again, just grab the first one
+                                                break
+                                    if not processed_file:
+                                        for random_file in dirinfo.get_all():
+                                            if 'readme' not in random_file.lower():
+                                                processed_file = self.mod_cache.load(dirinfo, random_file)
+                                                # Again, just grab the first one
+                                                break
+
+
+                                # If we successfully loaded, do Stuff.
+                                if processed_file:
+
+                                    # See if we've got a "better" description in a readme
+                                    if readme:
+                                        readme_info = readme.find_matching(processed_file.mod_title, single_mod)
+                                        if sum([len(l) for l in readme_info]) > sum([len(l) for l in processed_file.mod_desc]):
+                                            processed_file.update_desc(readme_info)
+
+                                    # Split up the category list and assign it
+                                    real_cats = []
+                                    cats = [c.strip() for c in mod_categories.lower().split(',')]
+                                    for cat in cats:
+                                        if cat in self.categories:
+                                            real_cats.append(cat)
+                                        else:
+                                            self.error_list.append('WARNING: Invalid category "{}" in {}'.format(
+                                                cat, rel_cabinet_filename,
+                                                ))
+                                    if len(real_cats) == 0:
+                                        self.error_list.append('ERROR: No categories found for {}'.format(processed_file.rel_filename))
+                                        del self.mod_cache[processed_file.full_filename]
+                                        prev_modfile = None
+                                    else:
+                                        processed_file.set_categories(cats)
+                                        prev_modfile = processed_file
+                                else:
+                                    self.error_list.append('ERROR: Mod file not processed in {}'.format(rel_cabinet_filename))
+
+                        # Don't forget to finalize the final processed file
                         if prev_modfile:
                             prev_modfile.finalize_urls()
-                        processed_file = None
-                        if ': ' in line:
-                            (mod_filename, categories) = line.split(': ', 1)
-                            processed_file = mod_cache.load(dirinfo, mod_filename)
-                        else:
-                            single_mod = True
-                            categories = line
-                            # Scan for which file to use -- just a single mod file in
-                            # this dir.  First look for .blcm files.
-                            for blcm_file in dirinfo.get_all_with_ext('blcm'):
-                                processed_file = mod_cache.load(dirinfo, blcm_file)
-                                # We're just going to always take the very first .blcm file we find
-                                break
-                            if not processed_file:
-                                for txt_file in dirinfo.get_all_with_ext('txt'):
-                                    if 'readme' not in txt_file.lower():
-                                        processed_file = mod_cache.load(dirinfo, txt_file)
-                                        # Again, just grab the first one
-                                        break
-                            if not processed_file:
-                                for random_file in dirinfo.get_all():
-                                    if 'readme' not in random_file.lower():
-                                        processed_file = mod_cache.load(dirinfo, random_file)
-                                        # Again, just grab the first one
-                                        break
 
+        # Find any deleted mods.
+        to_delete = []
+        for filename, mod in self.mod_cache.items():
+            if not mod.seen:
+                to_delete.append(filename)
+                self.error_list.append('NOTICE: Deleting {} - {}'.format(mod.rel_filename, mod.mod_title))
+        for filename in to_delete:
+            del self.mod_cache[filename]
 
-                        # If we successfully loaded, do Stuff.
-                        if processed_file:
+        for mod in self.mod_cache.values():
+            if mod.status == ModFile.S_NEW or mod.status == ModFile.S_UPDATED:
+                print('{} ({})'.format(mod.rel_filename, ModFile.S_ENG[mod.status]))
+                print(mod.mod_title)
+                print(mod.mod_author)
+                print(mod.mod_time)
+                print(mod.mod_desc)
+                print('Categories: {}'.format(mod.categories))
+                if mod.nexus_link:
+                    print('Nexus Link: {}'.format(mod.nexus_link))
+                if len(mod.screenshots) > 0:
+                    print('Screenshots:')
+                    for ss in mod.screenshots:
+                        print(' * {}'.format(ss))
+                print('--')
 
-                            # See if we've got a "better" description in a readme
-                            if readme:
-                                readme_info = readme.find_matching(processed_file.mod_title, single_mod)
-                                if sum([len(l) for l in readme_info]) > sum([len(l) for l in processed_file.mod_desc]):
-                                    processed_file.update_desc(readme_info)
+        # Report on any errors
+        if len(self.error_list) > 0:
+            print('Errors encountered during run:')
+            for e in self.error_list:
+                print(' * {}'.format(e))
+        else:
+            print('No errors encountered during run.')
 
-                            # Split up the category list and assign it
-                            real_cats = []
-                            for name in categories:
-                                cats = [c.strip() for c in categories.lower().split(',')]
-                                for cat in cats:
-                                    if cat in categories:
-                                        real_cats.append(cat)
-                                    else:
-                                        error_list.append('WARNING: Invalid category "{}" in {}'.format(
-                                            cat, rel_cabinet_filename,
-                                            ))
-                            if len(real_cats) == 0:
-                                error_list.append('ERROR: No categories found for {}'.format(processed_file.rel_filename))
-                                del mod_cache[processed_file.full_filename]
-                                prev_modfile = None
-                            else:
-                                processed_file.set_categories(cats)
-                                prev_modfile = processed_file
-                        else:
-                            error_list.append('ERROR: Mod file not processed in {}'.format(rel_cabinet_filename))
-
-                # Don't forget to finalize the final processed file
-                if prev_modfile:
-                    prev_modfile.finalize_urls()
-
-# Find any deleted mods.
-to_delete = []
-for filename, mod in mod_cache.items():
-    if not mod.seen:
-        to_delete.append(filename)
-        error_list.append('NOTICE: Deleting {} - {}'.format(mod.rel_filename, mod.mod_title))
-for filename in to_delete:
-    del mod_cache[filename]
-
-for mod in mod_cache.values():
-    if mod.status == ModFile.S_NEW or mod.status == ModFile.S_UPDATED:
-        print('{} ({})'.format(mod.rel_filename, ModFile.S_ENG[mod.status]))
-        print(mod.mod_title)
-        print(mod.mod_author)
-        print(mod.mod_time)
-        print(mod.mod_desc)
-        print('Categories: {}'.format(mod.categories))
-        if mod.nexus_link:
-            print('Nexus Link: {}'.format(mod.nexus_link))
-        if len(mod.screenshots) > 0:
-            print('Screenshots:')
-            for ss in mod.screenshots:
-                print(' * {}'.format(ss))
-        print('--')
-
-# Report on any errors
-if len(error_list) > 0:
-    print('Errors encountered during run:')
-    for e in error_list:
-        print(' * {}'.format(e))
-else:
-    print('No errors encountered during run.')
-
-# Write out our mod cache
-mod_cache.save()
-readme_cache.save()
+        # Write out our mod cache
+        self.mod_cache.save()
+        self.readme_cache.save()

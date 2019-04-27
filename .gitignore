@@ -1,2 +1,4 @@
-modcache.json.xz
-readmecache.json.xz
+cache/*.json.xz
+*.swp
+**/__pycache__
+.coverage
