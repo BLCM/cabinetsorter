@@ -225,16 +225,7 @@ class ModFile(object):
                 self.status = ModFile.S_UPDATED
             self.categories = new_cats
 
-    def add_url(self, url):
-        """
-        Adds a URL to ourselves, in a temporary fashion (will need
-        to "finalize" them once they're done, so we can set
-        S_UDPDATED properly, if need be
-        """
-        self.seen = True
-        self.urls.append(url)
-
-    def finalize_urls(self):
+    def set_urls(self, urls):
         """
         Finalize our URLs, which will put them into the appropriate
         data structures, and also update our status to S_UPDATED if
@@ -243,7 +234,7 @@ class ModFile(object):
         self.seen = True
         nexus_link = None
         screenshots = []
-        for url in self.urls:
+        for url in urls:
             if 'nexusmods.com' in url:
                 nexus_link = url
             else:
@@ -580,6 +571,137 @@ class ModCache(object):
         """
         del self.mapping[key]
 
+class CabinetModInfo(object):
+    """
+    A little class to hold info about a single mod definition inside
+    a `cabinet.info` file.  Just a glorified dictionary, really.  I'd
+    use a namedtuple, but we need to be able to dynamically add to
+    the 'urls' array
+    """
+
+    def __init__(self, filename, categories):
+        self.filename = filename
+        self.categories = categories
+        self.urls = []
+    
+    def add_url(self, url):
+        self.urls.append(url)
+
+class CabinetInfo(object):
+    """
+    Simple little class to read in and parse our `cabinet.info` files
+    """
+
+    def __init__(self, rel_filename, error_list, valid_categories, filename=None):
+        """
+        Initialize with the given `rel_filename`, which is the filename that
+        will be reported in error messages.  Errors encountered while loading
+        will be appended to `error_list`.  Valid categories for mods to live in
+        is specified by `valid_categories` (should be an object which can be
+        checked via `in`, such as a set, or a dict whose keys are the category
+        names).  Optionally specify `filename` to actually load the data right
+        away.
+        """
+        self.rel_filename = rel_filename
+        self.error_list = error_list
+        self.valid_categories = valid_categories
+        self.mods = {}
+        self.single_mod = False
+        if filename:
+            self.load_from_filename(filename)
+
+    def load_from_filename(self, filename):
+        """
+        Load from the given filename
+        """
+        with open(filename) as df:
+            self.load_from_file(df)
+
+    def load_from_file(self, df):
+        """
+        Loads our information from the given `filename`.  `rel_filename` will
+        be the filename reported in errors, if we run into any, and should have
+        any unneeded prefixes already shaved off.
+        """
+        prev_modfile = None
+        single_mod = False
+
+        # Now read cabinet.info to find mod files
+        for line in df.readlines():
+            if line.strip() == '' or line.startswith('#'):
+                pass
+            elif line.startswith('http://') or line.startswith('https://'):
+                if prev_modfile:
+                    self.mods[prev_modfile].add_url(line.strip())
+                else:
+                    self.error_list.append('ERROR: Did not find previous modfile but got URL, in {}'.format(
+                        self.rel_filename))
+            else:
+                if ': ' in line:
+                    if self.single_mod:
+                        self.error_list.append('ERROR: Unknown line "{}" found in single-mod info file {}'.format(
+                            line.strip(), self.rel_filename))
+                    else:
+                        (mod_filename, mod_categories) = line.split(': ', 1)
+                        if self.register(mod_filename, mod_categories):
+                            prev_modfile = mod_filename
+                else:
+                    if len(self.mods) > 0:
+                        self.error_list.append('ERROR: Unknown line "{}" inside {}'.format(
+                            line.strip(), self.rel_filename))
+                    else:
+                        self.single_mod = True
+                        if self.register(None, line.strip()):
+                            prev_modfile = None
+
+    def register(self, mod_name, mod_categories):
+        """
+        Registers a mod line that we've found in a `cabinet.info` file.
+        Will double-check against the list of valid categories and return
+        False if the mod was not registered.
+        """
+
+        # First check to make sure we don't already have this mod
+        if mod_name in self.mods:
+            self.error_list.append('ERROR: {} specified twice inside {}'.format(
+                mod_name, self.rel_filename))
+            return False
+
+        # Split up the category list and assign it
+        real_cats = []
+        cats = [c.strip() for c in mod_categories.lower().split(',')]
+        for cat in cats:
+            if cat in self.valid_categories:
+                real_cats.append(cat)
+            else:
+                self.error_list.append('WARNING: Invalid category "{}" in {}'.format(
+                    cat, self.rel_filename,
+                    ))
+
+        # If we have categories which are valid, continue!
+        if len(real_cats) > 0:
+            self.mods[mod_name] = CabinetModInfo(mod_name, real_cats)
+            return True
+        else:
+            if mod_name:
+                report = mod_name
+            else:
+                report = 'the mod'
+            self.error_list.append('ERROR: No categories found for {} in {}'.format(report, self.rel_filename))
+            return False
+
+    def modlist(self):
+        """
+        Returns our list if CabinetModInfo objects
+        """
+        return self.mods.values()
+
+    def __getitem__(self, key):
+        """
+        Convenience function to be able to use this sort of like a dict
+        """
+        return self.mods[key]
+
 class App(object):
     """
     Main app
@@ -643,81 +765,53 @@ class App(object):
                     # Read the file info
                     cabinet_filename = dirinfo['cabinet.info']
                     rel_cabinet_filename = cabinet_filename[len(self.repo_dir)+1:]
-                    with open(cabinet_filename) as df:
-                        prev_modfile = None
-                        single_mod = False
+                    cabinet_info = CabinetInfo(
+                            rel_cabinet_filename,
+                            self.error_list,
+                            self.categories,
+                            filename=cabinet_filename,
+                            )
 
-                        # Now read cabinet.info to find mod files
-                        for line in df.readlines():
-                            if line.strip() == '' or line.startswith('#'):
-                                pass
-                            elif line.startswith('http://') or line.startswith('https://'):
-                                if prev_modfile:
-                                    prev_modfile.add_url(line.strip())
-                                else:
-                                    self.error_list.append('ERROR: Did not find previous modfile but got URL, in {}'.format(rel_cabinet_filename))
-                            else:
-                                if prev_modfile:
-                                    prev_modfile.finalize_urls()
-                                processed_file = None
-                                if ': ' in line:
-                                    (mod_filename, mod_categories) = line.split(': ', 1)
-                                    processed_file = self.mod_cache.load(dirinfo, mod_filename)
-                                else:
-                                    single_mod = True
-                                    mod_categories = line
-                                    # Scan for which file to use -- just a single mod file in
-                                    # this dir.  First look for .blcm files.
-                                    for blcm_file in dirinfo.get_all_with_ext('blcm'):
-                                        processed_file = self.mod_cache.load(dirinfo, blcm_file)
-                                        # We're just going to always take the very first .blcm file we find
-                                        break
-                                    if not processed_file:
-                                        for txt_file in dirinfo.get_all_with_ext('txt'):
-                                            if 'readme' not in txt_file.lower():
-                                                processed_file = self.mod_cache.load(dirinfo, txt_file)
-                                                # Again, just grab the first one
-                                                break
-                                    if not processed_file:
-                                        for random_file in dirinfo.get_all():
-                                            if 'readme' not in random_file.lower():
-                                                processed_file = self.mod_cache.load(dirinfo, random_file)
-                                                # Again, just grab the first one
-                                                break
+                    # Loop through the mods described by cabinet.info and load them
+                    processed_files = []
+                    if cabinet_info.single_mod:
+                        cabinet_info_mod = cabinet_info.mods[None]
+                        # Scan for which file to use -- just a single mod file in
+                        # this dir.  First look for .blcm files.
+                        for blcm_file in dirinfo.get_all_with_ext('blcm'):
+                            processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, blcm_file)))
+                            # We're just going to always take the very first .blcm file we find
+                            break
+                        if len(processed_files) == 0:
+                            for txt_file in dirinfo.get_all_with_ext('txt'):
+                                if 'readme' not in txt_file.lower():
+                                    processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, txt_file)))
+                                    # Again, just grab the first one
+                                    break
+                        if len(processed_files) == 0:
+                            for random_file in dirinfo.get_all():
+                                if 'readme' not in random_file.lower():
+                                    processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, random_file)))
+                                    # Again, just grab the first one
+                                    break
+                    else:
+                        for cabinet_info_mod in cabinet_info.modlist():
+                            processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, cabinet_info_mod.filename)))
 
+                    # Do Stuff with each file we got
+                    for (cabinet_info_mod, processed_file) in processed_files:
 
-                                # If we successfully loaded, do Stuff.
-                                if processed_file:
+                        # See if we've got a "better" description in a readme
+                        if readme:
+                            readme_info = readme.find_matching(processed_file.mod_title, cabinet_info.single_mod)
+                            if sum([len(l) for l in readme_info]) > sum([len(l) for l in processed_file.mod_desc]):
+                                processed_file.update_desc(readme_info)
 
-                                    # See if we've got a "better" description in a readme
-                                    if readme:
-                                        readme_info = readme.find_matching(processed_file.mod_title, single_mod)
-                                        if sum([len(l) for l in readme_info]) > sum([len(l) for l in processed_file.mod_desc]):
-                                            processed_file.update_desc(readme_info)
+                        # Set our categories (if we'd read from cache, they may have changed)
+                        processed_file.set_categories(cabinet_info_mod.categories)
 
-                                    # Split up the category list and assign it
-                                    real_cats = []
-                                    cats = [c.strip() for c in mod_categories.lower().split(',')]
-                                    for cat in cats:
-                                        if cat in self.categories:
-                                            real_cats.append(cat)
-                                        else:
-                                            self.error_list.append('WARNING: Invalid category "{}" in {}'.format(
-                                                cat, rel_cabinet_filename,
-                                                ))
-                                    if len(real_cats) == 0:
-                                        self.error_list.append('ERROR: No categories found for {}'.format(processed_file.rel_filename))
-                                        del self.mod_cache[processed_file.full_filename]
-                                        prev_modfile = None
-                                    else:
-                                        processed_file.set_categories(cats)
-                                        prev_modfile = processed_file
-                                else:
-                                    self.error_list.append('ERROR: Mod file not processed in {}'.format(rel_cabinet_filename))
-
-                        # Don't forget to finalize the final processed file
-                        if prev_modfile:
-                            prev_modfile.finalize_urls()
+                        # Set our URLs (likewise, if from cache then they may have changed)
+                        processed_file.set_urls(cabinet_info_mod.urls)
 
         # Find any deleted mods.
         to_delete = []
