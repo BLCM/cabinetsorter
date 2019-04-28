@@ -631,7 +631,7 @@ class CabinetInfo(object):
             if line.strip() == '' or line.startswith('#'):
                 pass
             elif line.startswith('http://') or line.startswith('https://'):
-                if prev_modfile:
+                if prev_modfile in self.mods:
                     self.mods[prev_modfile].add_url(line.strip())
                 else:
                     self.error_list.append('ERROR: Did not find previous modfile but got URL, in {}'.format(
@@ -701,6 +701,18 @@ class CabinetInfo(object):
         Convenience function to be able to use this sort of like a dict
         """
         return self.mods[key]
+
+    def __contains__(self, key):
+        """
+        Convenience function to be able to use this sort of like a dict
+        """
+        return key in self.mods
+
+    def __len__(self):
+        """
+        Convenience function to be able to use this sort of like a dict
+        """
+        return len(self.mods)
 
 class App(object):
     """
