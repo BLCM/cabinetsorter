@@ -142,6 +142,7 @@ class ModFile(object):
         self.mod_time = datetime.datetime.fromtimestamp(mtime)
         self.mod_title = None
         self.mod_desc = []
+        self.readme_desc = []
         self.nexus_link = None
         self.screenshots = []
         self.urls = []
@@ -164,8 +165,6 @@ class ModFile(object):
                     self.load_ft(df)
                 else:
                     self.load_unknown(df)
-            if len(self.mod_desc) == 0:
-                self.mod_desc.append('(no description found)')
         else:
             # This is used when deserializing
             self.seen = False
@@ -192,6 +191,7 @@ class ModFile(object):
                 'm': self.mtime,
                 't': self.mod_title,
                 'd': self.mod_desc,
+                'r': self.readme_desc,
                 'n': self.nexus_link,
                 's': self.screenshots,
                 'c': list(self.categories),
@@ -209,6 +209,7 @@ class ModFile(object):
         new_file.mod_author = input_dict['a']
         new_file.mod_title = input_dict['t']
         new_file.mod_desc = input_dict['d']
+        new_file.readme_desc = input_dict['r']
         new_file.nexus_link = input_dict['n']
         new_file.screenshots = input_dict['s']
         new_file.categories = set(input_dict['c'])
@@ -245,15 +246,14 @@ class ModFile(object):
         self.screenshots = screenshots
         self.nexus_link = nexus_link
 
-    def update_desc(self, new_desc):
+    def update_readme_desc(self, new_desc):
         """
-        Updates our description with the given array (almost certainly from
-        a README)
+        Updates our README description with the given array
         """
         self.seen = True
-        if self.status != ModFile.S_NEW and new_desc != self.mod_desc:
+        if self.status != ModFile.S_NEW and new_desc != self.readme_desc:
             self.status = ModFile.S_UPDATED
-        self.mod_desc = new_desc
+        self.readme_desc = new_desc
 
     def load_blcmm(self, df):
         """
@@ -378,6 +378,7 @@ class Readme(object):
     def __init__(self, mtime, filename=None):
         self.mapping = {'(default)': []}
         self.mtime = mtime
+        self.first_section = None
         if filename:
             self.read_file(filename)
             self.filename = filename
@@ -398,7 +399,10 @@ class Readme(object):
             for section in self.mapping.keys():
                 if Levenshtein.ratio(mod_name_lower, section) > .8:
                     return self.mapping[section]
-            return self.mapping['(default)']
+            if self.first_section:
+                return self.mapping[self.first_section]
+            else:
+                return self.mapping['(default)']
         else:
             for section in self.mapping.keys():
                 if Levenshtein.ratio(mod_name_lower, section) > .8:
@@ -458,24 +462,34 @@ class Readme(object):
                 # shame I personally use it all the time, eh?
                 if prev_line:
                     self.mapping[cur_section].pop()
+                    if self.first_section == cur_section and len(self.mapping[cur_section]) == 0:
+                        self.first_section = None
                     cur_section = prev_line.strip().lower()
                     self.mapping[cur_section] = []
                 else:
+                    if not self.first_section:
+                        self.first_section = cur_section
                     self.mapping[cur_section].append(line)
             elif line.startswith('---'):
                 # Multiline markdown section highlighting.  Annoying!  A
                 # shame I personally use it all the time, eh?
                 if prev_line:
                     self.mapping[cur_section].pop()
+                    if self.first_section == cur_section and len(self.mapping[cur_section]) == 0:
+                        self.first_section = None
                     cur_section = prev_line.strip().lower()
                     self.mapping[cur_section] = []
                 else:
+                    if not self.first_section:
+                        self.first_section = cur_section
                     self.mapping[cur_section].append(line)
             elif line.startswith('-'):
                 cur_section = line.lstrip("- \t").lower()
                 self.mapping[cur_section] = []
             else:
                 if len(self.mapping[cur_section]) > 0 or line != '':
+                    if not self.first_section:
+                        self.first_section = cur_section
                     self.mapping[cur_section].append(line)
             prev_line = line
 
@@ -816,8 +830,9 @@ class App(object):
                         # See if we've got a "better" description in a readme
                         if readme:
                             readme_info = readme.find_matching(processed_file.mod_title, cabinet_info.single_mod)
-                            if sum([len(l) for l in readme_info]) > sum([len(l) for l in processed_file.mod_desc]):
-                                processed_file.update_desc(readme_info)
+                        else:
+                            readme_info = []
+                        processed_file.update_readme_desc(readme_info)
 
                         # Set our categories (if we'd read from cache, they may have changed)
                         processed_file.set_categories(cabinet_info_mod.categories)
@@ -841,6 +856,7 @@ class App(object):
                 print(mod.mod_author)
                 print(mod.mod_time)
                 print(mod.mod_desc)
+                print(mod.readme_desc)
                 print('Categories: {}'.format(mod.categories))
                 if mod.nexus_link:
                     print('Nexus Link: {}'.format(mod.nexus_link))

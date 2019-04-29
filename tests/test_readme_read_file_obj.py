@@ -48,6 +48,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
         self.assertEqual(self.readme.mapping, {
             '(default)': ['Testing'],
             })
+        self.assertEqual(self.readme.first_section, '(default)')
 
     def test_initial_two_comments(self):
         self.set_df_contents([
@@ -58,6 +59,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
         self.assertEqual(self.readme.mapping, {
             '(default)': ['Testing', 'Testing 2'],
             })
+        self.assertEqual(self.readme.first_section, '(default)')
 
     def test_hash_section(self):
         for hashes in ['#', '##', '###', '####']:
@@ -71,6 +73,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
                     '(default)': [],
                     'section': ['Testing'],
                     })
+                self.assertEqual(self.readme.first_section, 'section')
 
     def test_default_and_one_hash_section(self):
         self.set_df_contents([
@@ -83,6 +86,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
             '(default)': ['Initial'],
             'section': ['Testing'],
             })
+        self.assertEqual(self.readme.first_section, '(default)')
 
     def test_one_hash_section_two_lines(self):
         self.set_df_contents([
@@ -95,6 +99,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
             '(default)': [],
             'section': ['Testing', 'Testing 2'],
             })
+        self.assertEqual(self.readme.first_section, 'section')
 
     def test_double_underline_section(self):
         self.set_df_contents([
@@ -107,6 +112,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
             '(default)': [],
             'section': ['Testing'],
             })
+        self.assertEqual(self.readme.first_section, 'section')
 
     def test_single_underline_section(self):
         self.set_df_contents([
@@ -119,6 +125,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
             '(default)': [],
             'section': ['Testing'],
             })
+        self.assertEqual(self.readme.first_section, 'section')
 
     def test_initial_double_line(self):
         self.set_df_contents([
@@ -129,6 +136,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
         self.assertEqual(self.readme.mapping, {
             '(default)': ['=======', 'Testing'],
             })
+        self.assertEqual(self.readme.first_section, '(default)')
 
     def test_initial_single_line(self):
         self.set_df_contents([
@@ -139,6 +147,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
         self.assertEqual(self.readme.mapping, {
             '(default)': ['-------', 'Testing'],
             })
+        self.assertEqual(self.readme.first_section, '(default)')
 
     def test_dash_section(self):
         self.set_df_contents([
@@ -150,6 +159,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
             '(default)': [],
             'section': ['Testing'],
             })
+        self.assertEqual(self.readme.first_section, 'section')
 
     def test_two_sections(self):
         self.set_df_contents([
@@ -164,6 +174,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
             'section': ['Testing'],
             'section 2': ['More Testing'],
             })
+        self.assertEqual(self.readme.first_section, 'section')
 
     def test_two_sections_multiline(self):
         self.set_df_contents([
@@ -182,6 +193,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
             'section': ['Testing', 'Foo'],
             'section 2': ['More Testing', 'Bar'],
             })
+        self.assertEqual(self.readme.first_section, '(default)')
 
     def test_initial_default_blank(self):
         self.set_df_contents([
@@ -192,6 +204,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
         self.assertEqual(self.readme.mapping, {
             '(default)': ['Testing'],
             })
+        self.assertEqual(self.readme.first_section, '(default)')
 
     def test_initial_default_blank_double(self):
         self.set_df_contents([
@@ -203,6 +216,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
         self.assertEqual(self.readme.mapping, {
             '(default)': ['Testing'],
             })
+        self.assertEqual(self.readme.first_section, '(default)')
 
     def test_initial_section_blank(self):
         self.set_df_contents([
@@ -215,6 +229,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
             '(default)': [],
             'section': ['Testing'],
             })
+        self.assertEqual(self.readme.first_section, 'section')
 
     def test_initial_section_blank_double(self):
         self.set_df_contents([
@@ -228,6 +243,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
             '(default)': [],
             'section': ['Testing'],
             })
+        self.assertEqual(self.readme.first_section, 'section')
 
     def test_trailing_blank(self):
         self.set_df_contents([
@@ -238,6 +254,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
         self.assertEqual(self.readme.mapping, {
             '(default)': ['Testing'],
             })
+        self.assertEqual(self.readme.first_section, '(default)')
 
     def test_trailing_section_blank(self):
         self.set_df_contents([
@@ -250,6 +267,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
             '(default)': [],
             'section': ['Testing'],
             })
+        self.assertEqual(self.readme.first_section, 'section')
 
     def test_two_trailing_section_blank(self):
         self.set_df_contents([
@@ -264,6 +282,7 @@ class ReadmeReadFileObjTests(unittest.TestCase):
             '(default)': ['Main'],
             'section': ['Testing'],
             })
+        self.assertEqual(self.readme.first_section, '(default)')
 
     def test_double_trailing_blank(self):
         self.set_df_contents([
@@ -275,3 +294,4 @@ class ReadmeReadFileObjTests(unittest.TestCase):
         self.assertEqual(self.readme.mapping, {
             '(default)': ['Testing'],
             })
+        self.assertEqual(self.readme.first_section, '(default)')

@@ -78,6 +78,16 @@ class ReadmeReadFindMatchingTests(unittest.TestCase):
         self.assertEqual(self.readme.find_matching('xyzzy', single_mod=True),
                 ['Beginning Text'])
 
+    def test_single_mod_first_section(self):
+        self.read([
+            '# Unrelated',
+            'Testing',
+            '# Foobar',
+            'Not Matched',
+            ])
+        self.assertEqual(self.readme.find_matching('xyzzy', single_mod=True),
+                ['Testing'])
+
     def test_single_mod_empty(self):
         self.read([])
         self.assertEqual(self.readme.find_matching('xyzzy', single_mod=True),
