@@ -33,3 +33,10 @@ made to find out.  Required modules (installable via `pip`, of course):
 - `coverage` (only to run coverage on the unit tests, for development
   purposes.  Not needed just to run.)
 
+License
+-------
+
+Borderlands ModCabinet Sorter is licensed under the
+[GPLv3 or later](https://www.gnu.org/licenses/quick-guide-gplv3.html).
+See [COPYING.txt](COPYING.txt) for the full text of the license.
+
