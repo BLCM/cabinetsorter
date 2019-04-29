@@ -419,6 +419,7 @@ class Readme(object):
                 'f': self.filename,
                 'm': self.mtime,
                 'd': self.mapping,
+                's': self.first_section,
                 }
 
     @staticmethod
@@ -429,6 +430,7 @@ class Readme(object):
         new_readme = Readme(input_dict['m'])
         new_readme.filename = input_dict['f']
         new_readme.mapping = input_dict['d']
+        new_readme.first_section = input_dict['s']
         return new_readme
 
     def read_file(self, filename):
