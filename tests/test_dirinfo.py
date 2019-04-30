@@ -106,7 +106,7 @@ class DirInfoTests(unittest.TestCase):
         info = self.new_dirinfo(dirname, [filename])
         self.assertIn(filename, info)
         self.assertEqual(info.get_all_with_ext('txt'), [filename])
-        self.assertEqual(info.readme, os.path.join(self.base_dir, dirname, filename))
+        self.assertEqual(info.readme, filename)
 
     def test_readme_inner(self):
         dirname = 'BL2 Mods/Username'
@@ -114,5 +114,5 @@ class DirInfoTests(unittest.TestCase):
         info = self.new_dirinfo(dirname, [filename])
         self.assertIn(filename, info)
         self.assertEqual(info.get_all_with_ext('txt'), [filename])
-        self.assertEqual(info.readme, os.path.join(self.base_dir, dirname, filename))
+        self.assertEqual(info.readme, filename)
 

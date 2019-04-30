@@ -92,7 +92,7 @@ class DirInfo(object):
             # care enough to try and prioritize, in dirs where there
             # might be more than one
             if 'readme' in lower:
-                self.readme = self.lower_mapping[lower]
+                self.readme = lower
 
     def __getitem__(self, key):
         """
@@ -141,8 +141,6 @@ class ModFile(object):
     """
     Class to pull info out of a mod file.
     """
-
-    cache_category = 'mods'
 
     (S_UNKNOWN,
             S_CACHED,
@@ -393,8 +391,6 @@ class Readme(object):
     well whether it's markdown or plaintext.
     """
 
-    cache_category = 'readmes'
-
     def __init__(self, mtime, filename=None):
         self.mapping = {'(default)': []}
         self.mtime = mtime
@@ -520,10 +516,12 @@ class Readme(object):
             while len(data) > 0 and data[-1] == '':
                 data.pop()
 
-class ModCache(object):
+class BaseCache(object):
     """
-    Class to hold info about mod files (and, incidentally, README files).
+    Base caching class which we'll use for both mod files and READMEs
     """
+
+    cache_version = 1
 
     def __init__(self, filename):
         self.filename = filename
@@ -531,43 +529,20 @@ class ModCache(object):
         if os.path.exists(filename):
             with lzma.open(filename, 'rt', encoding='utf-8') as df:
                 serialized_dict = json.load(df)
-                for (mod_filename, mod_dict) in serialized_dict['mods'].items():
-                    self.mapping[mod_filename] = ModFile.unserialize(mod_dict)
-                for (readme_filename, readme_dict) in serialized_dict['readmes'].items():
-                    self.mapping[readme_filename] = Readme.unserialize(readme_dict)
-
-    def load(self, dirinfo, filename):
-        """
-        Loads a ModFile from the given `filename` (using `dirinfo` as its base),
-        if its mtime has been changed or was not previously known.  Otherwise
-        return our previously-cached version
-        """
-        full_filename = dirinfo[filename]
-        mtime = os.stat(full_filename).st_mtime
-        if full_filename not in self.mapping or mtime != self.mapping[full_filename].mtime:
-            if full_filename not in self.mapping:
-                initial_status = ModFile.S_NEW
-            else:
-                initial_status = ModFile.S_UPDATED
-            self.mapping[full_filename] = ModFile(mtime, dirinfo, filename, initial_status)
-        return self.mapping[full_filename]
-
-    def load_readme(self, filename):
-        """
-        Loads a README from the given `filename` (which should be a full path).
-        """
-        mtime = os.stat(filename).st_mtime
-        if filename not in self.mapping or mtime != self.mapping[filename].mtime:
-            self.mapping[filename] = Readme(mtime, filename)
-        return self.mapping[filename]
+                if serialized_dict['version'] > self.cache_version:
+                    raise Exception('{} is a version {} cache.  We only support up to version {}'.format(
+                        filename, serialized_dict['version'], self.cache_version,
+                        ))
+                for (inner_filename, inner_dict) in serialized_dict[self.cache_key].items():
+                    self.mapping[inner_filename] = self.cache_class.unserialize(inner_dict)
 
     def save(self):
         """
         Saves ourself
         """
-        save_dict = {'mods': {}, 'readmes': {}}
+        save_dict = {'version': self.cache_version, self.cache_key: {}}
         for mod_filename, mod in self.mapping.items():
-            save_dict[mod.cache_category][mod_filename] = mod.serialize()
+            save_dict[self.cache_key][mod_filename] = mod.serialize()
         with lzma.open(self.filename, 'wt', encoding='utf-8') as df:
             json.dump(save_dict, df)
 
@@ -606,6 +581,48 @@ class ModCache(object):
         Convenience function to be able to use this sort of like a dict
         """
         del self.mapping[key]
+
+class ModCache(BaseCache):
+    """
+    A cache for mod files
+    """
+
+    cache_key = 'mods'
+    cache_class = ModFile
+
+    def load(self, dirinfo, filename):
+        """
+        Loads a ModFile from the given `filename` (using `dirinfo` as its base),
+        if its mtime has been changed or was not previously known.  Otherwise
+        return our previously-cached version
+        """
+        full_filename = dirinfo[filename]
+        mtime = os.stat(full_filename).st_mtime
+        if full_filename not in self.mapping or mtime != self.mapping[full_filename].mtime:
+            if full_filename not in self.mapping:
+                initial_status = ModFile.S_NEW
+            else:
+                initial_status = ModFile.S_UPDATED
+            self.mapping[full_filename] = ModFile(mtime, dirinfo, filename, initial_status)
+        return self.mapping[full_filename]
+
+class ReadmeCache(BaseCache):
+    """
+    A cache for readme files
+    """
+
+    cache_key = 'readmes'
+    cache_class = Readme
+
+    def load(self, dirinfo, filename):
+        """
+        Loads a README in the given `dirinfo`, from the given `filename`
+        """
+        full_filename = dirinfo[filename]
+        mtime = os.stat(full_filename).st_mtime
+        if full_filename not in self.mapping or mtime != self.mapping[full_filename].mtime:
+            self.mapping[full_filename] = Readme(mtime, full_filename)
+        return self.mapping[full_filename]
 
 class CabinetModInfo(object):
     """
@@ -785,7 +802,7 @@ class App(object):
 
         # Some initial vars
         self.mod_cache = ModCache(self.cache_filename)
-        self.readme_cache = ModCache(self.readme_cache_filename)
+        self.readme_cache = ReadmeCache(self.readme_cache_filename)
         self.error_list = []
 
     def run(self):
@@ -808,7 +825,7 @@ class App(object):
                     # Load in readme info, if we can.
                     readme = None
                     if dirinfo.readme:
-                        readme = self.readme_cache.load_readme(dirinfo.readme)
+                        readme = self.readme_cache.load(dirinfo, dirinfo.readme)
 
                     # Read the file info
                     cabinet_filename = dirinfo['cabinet.info']
