@@ -137,9 +137,9 @@ class DirInfo(object):
             self[filename][len(self.repo_dir)+1:],
             )
 
-class ModFile(object):
+class Cacheable(object):
     """
-    Class to pull info out of a mod file.
+    A class which can be cached by our BaseCache
     """
 
     (S_UNKNOWN,
@@ -154,9 +154,48 @@ class ModFile(object):
             S_UPDATED: 'Updated',
             }
 
-    def __init__(self, mtime, dirinfo=None, filename=None, initial_status=S_UNKNOWN):
-        self.status = initial_status
+    def __init__(self, mtime, initial_status=S_UNKNOWN):
         self.mtime = mtime
+        self.status = initial_status
+
+    def serialize(self):
+        """
+        Returns a serializable dict describing ourselves
+        """
+        d = self._serialize()
+        d['m'] = self.mtime
+        return d
+
+    def _serialize(self):
+        """
+        Returns a serializable dict describing ourselves
+        """
+        raise Exception('Not implemented')
+
+    @staticmethod
+    def unserialize(cache_class, input_dict):
+        """
+        Creates a new ModFile given the specified serialized dict
+        """
+        obj = cache_class(input_dict['m'], initial_status=Cacheable.S_CACHED)
+        obj._unserialize(input_dict)
+        return obj
+
+    def _unserialize(input_dict):
+        """
+        Populates ourself given the specified serialized dict
+        """
+        raise Exception('Not implemented')
+
+class ModFile(Cacheable):
+    """
+    Class to pull info out of a mod file.
+    """
+
+    cache_key = 'mods'
+
+    def __init__(self, mtime, dirinfo=None, filename=None, initial_status=Cacheable.S_UNKNOWN):
+        super().__init__(mtime, initial_status)
         self.mod_time = datetime.datetime.fromtimestamp(mtime)
         self.mod_title = None
         self.mod_desc = []
@@ -196,17 +235,15 @@ class ModFile(object):
             while self.mod_desc[-1] == '':
                 self.mod_desc.pop()
 
-    def serialize(self):
+    def _serialize(self):
         """
         Returns a serializable dict describing ourselves
         """
-        # TODO: Should maybe protobuf this stuff for performance...
         return {
                 'ff': self.full_filename,
                 'rp': self.rel_path,
                 'rf': self.rel_filename,
                 'a': self.mod_author,
-                'm': self.mtime,
                 't': self.mod_title,
                 'd': self.mod_desc,
                 'r': self.readme_desc,
@@ -215,23 +252,20 @@ class ModFile(object):
                 'c': list(self.categories),
                 }
 
-    @staticmethod
-    def unserialize(input_dict):
+    def _unserialize(self, input_dict):
         """
-        Creates a new ModFile given the specified serialized dict
+        Populates ourself given the specified serialized dict
         """
-        new_file = ModFile(input_dict['m'], initial_status=ModFile.S_CACHED)
-        new_file.full_filename = input_dict['ff']
-        new_file.rel_path = input_dict['rp']
-        new_file.rel_filename = input_dict['rf']
-        new_file.mod_author = input_dict['a']
-        new_file.mod_title = input_dict['t']
-        new_file.mod_desc = input_dict['d']
-        new_file.readme_desc = input_dict['r']
-        new_file.nexus_link = input_dict['n']
-        new_file.screenshots = input_dict['s']
-        new_file.categories = set(input_dict['c'])
-        return new_file
+        self.full_filename = input_dict['ff']
+        self.rel_path = input_dict['rp']
+        self.rel_filename = input_dict['rf']
+        self.mod_author = input_dict['a']
+        self.mod_title = input_dict['t']
+        self.mod_desc = input_dict['d']
+        self.readme_desc = input_dict['r']
+        self.nexus_link = input_dict['n']
+        self.screenshots = input_dict['s']
+        self.categories = set(input_dict['c'])
 
     def set_categories(self, categories):
         """
@@ -240,8 +274,8 @@ class ModFile(object):
         self.seen = True
         new_cats = set(categories)
         if new_cats != self.categories:
-            if self.status != ModFile.S_NEW:
-                self.status = ModFile.S_UPDATED
+            if self.status != Cacheable.S_NEW:
+                self.status = Cacheable.S_UPDATED
             self.categories = new_cats
 
     def set_urls(self, urls):
@@ -258,9 +292,9 @@ class ModFile(object):
                 nexus_link = url
             else:
                 screenshots.append(url)
-        if (self.status != ModFile.S_NEW and
+        if (self.status != Cacheable.S_NEW and
                 (nexus_link != self.nexus_link or screenshots != self.screenshots)):
-            self.status = ModFile.S_UPDATED
+            self.status = Cacheable.S_UPDATED
         self.screenshots = screenshots
         self.nexus_link = nexus_link
 
@@ -269,8 +303,8 @@ class ModFile(object):
         Updates our README description with the given array
         """
         self.seen = True
-        if self.status != ModFile.S_NEW and new_desc != self.readme_desc:
-            self.status = ModFile.S_UPDATED
+        if self.status != Cacheable.S_NEW and new_desc != self.readme_desc:
+            self.status = Cacheable.S_UPDATED
         self.readme_desc = new_desc
 
     def load_blcmm(self, df):
@@ -383,7 +417,7 @@ class ModFile(object):
         # Finally, add it in.
         self.mod_desc.append(line)
 
-class Readme(object):
+class Readme(Cacheable):
     """
     Class to hold information about README files.  We're mostly just trying
     to find anything that might be a heading or list entry, so we can
@@ -391,13 +425,16 @@ class Readme(object):
     well whether it's markdown or plaintext.
     """
 
-    def __init__(self, mtime, filename=None):
+    cache_key = 'readmes'
+
+    def __init__(self, mtime, dirinfo=None, filename=None, initial_status=Cacheable.S_UNKNOWN):
+        super().__init__(mtime, initial_status)
         self.mapping = {'(default)': []}
-        self.mtime = mtime
         self.first_section = None
         if filename:
-            self.read_file(filename)
-            self.filename = filename
+            full_filename = dirinfo[filename]
+            self.read_file(full_filename)
+            self.filename = full_filename
         else:
             self.filename = None
 
@@ -438,16 +475,13 @@ class Readme(object):
                 's': self.first_section,
                 }
 
-    @staticmethod
-    def unserialize(input_dict):
+    def _unserialize(self, input_dict):
         """
-        Creates a new Readme given the specified serialized dict
+        Populates ourself given the specified serialized dict
         """
-        new_readme = Readme(input_dict['m'])
-        new_readme.filename = input_dict['f']
-        new_readme.mapping = input_dict['d']
-        new_readme.first_section = input_dict['s']
-        return new_readme
+        self.filename = input_dict['f']
+        self.mapping = input_dict['d']
+        self.first_section = input_dict['s']
 
     def read_file(self, filename):
         """
@@ -516,14 +550,15 @@ class Readme(object):
             while len(data) > 0 and data[-1] == '':
                 data.pop()
 
-class BaseCache(object):
+class FileCache(object):
     """
     Base caching class which we'll use for both mod files and READMEs
     """
 
     cache_version = 1
 
-    def __init__(self, filename):
+    def __init__(self, cache_class, filename):
+        self.cache_class = cache_class
         self.filename = filename
         self.mapping = {}
         if os.path.exists(filename):
@@ -533,18 +568,34 @@ class BaseCache(object):
                     raise Exception('{} is a version {} cache.  We only support up to version {}'.format(
                         filename, serialized_dict['version'], self.cache_version,
                         ))
-                for (inner_filename, inner_dict) in serialized_dict[self.cache_key].items():
-                    self.mapping[inner_filename] = self.cache_class.unserialize(inner_dict)
+                for (inner_filename, inner_dict) in serialized_dict[self.cache_class.cache_key].items():
+                    self.mapping[inner_filename] = self.cache_class.unserialize(self.cache_class, inner_dict)
 
     def save(self):
         """
         Saves ourself
         """
-        save_dict = {'version': self.cache_version, self.cache_key: {}}
+        save_dict = {'version': self.cache_version, self.cache_class.cache_key: {}}
         for mod_filename, mod in self.mapping.items():
-            save_dict[self.cache_key][mod_filename] = mod.serialize()
+            save_dict[self.cache_class.cache_key][mod_filename] = mod.serialize()
         with lzma.open(self.filename, 'wt', encoding='utf-8') as df:
             json.dump(save_dict, df)
+
+    def load(self, dirinfo, filename):
+        """
+        Loads an entry from the given `filename` (using `dirinfo` as its base),
+        if its mtime has been changed or was not previously known.  Otherwise
+        return our previously-cached version
+        """
+        full_filename = dirinfo[filename]
+        mtime = os.stat(full_filename).st_mtime
+        if full_filename not in self.mapping or mtime != self.mapping[full_filename].mtime:
+            if full_filename not in self.mapping:
+                initial_status = Cacheable.S_NEW
+            else:
+                initial_status = Cacheable.S_UPDATED
+            self.mapping[full_filename] = self.cache_class(mtime, dirinfo, filename, initial_status)
+        return self.mapping[full_filename]
 
     def items(self):
         """
@@ -582,47 +633,11 @@ class BaseCache(object):
         """
         del self.mapping[key]
 
-class ModCache(BaseCache):
-    """
-    A cache for mod files
-    """
-
-    cache_key = 'mods'
-    cache_class = ModFile
-
-    def load(self, dirinfo, filename):
+    def __len__(self):
         """
-        Loads a ModFile from the given `filename` (using `dirinfo` as its base),
-        if its mtime has been changed or was not previously known.  Otherwise
-        return our previously-cached version
+        Convenience function to be able to use this sort of like a dict
         """
-        full_filename = dirinfo[filename]
-        mtime = os.stat(full_filename).st_mtime
-        if full_filename not in self.mapping or mtime != self.mapping[full_filename].mtime:
-            if full_filename not in self.mapping:
-                initial_status = ModFile.S_NEW
-            else:
-                initial_status = ModFile.S_UPDATED
-            self.mapping[full_filename] = ModFile(mtime, dirinfo, filename, initial_status)
-        return self.mapping[full_filename]
-
-class ReadmeCache(BaseCache):
-    """
-    A cache for readme files
-    """
-
-    cache_key = 'readmes'
-    cache_class = Readme
-
-    def load(self, dirinfo, filename):
-        """
-        Loads a README in the given `dirinfo`, from the given `filename`
-        """
-        full_filename = dirinfo[filename]
-        mtime = os.stat(full_filename).st_mtime
-        if full_filename not in self.mapping or mtime != self.mapping[full_filename].mtime:
-            self.mapping[full_filename] = Readme(mtime, full_filename)
-        return self.mapping[full_filename]
+        return len(self.mapping)
 
 class CabinetModInfo(object):
     """
@@ -801,8 +816,8 @@ class App(object):
     def __init__(self):
 
         # Some initial vars
-        self.mod_cache = ModCache(self.cache_filename)
-        self.readme_cache = ReadmeCache(self.readme_cache_filename)
+        self.mod_cache = FileCache(ModFile, self.cache_filename)
+        self.readme_cache = FileCache(Readme, self.readme_cache_filename)
         self.error_list = []
 
     def run(self):
@@ -889,8 +904,8 @@ class App(object):
             del self.mod_cache[filename]
 
         for mod in self.mod_cache.values():
-            if mod.status == ModFile.S_NEW or mod.status == ModFile.S_UPDATED:
-                print('{} ({})'.format(mod.rel_filename, ModFile.S_ENG[mod.status]))
+            if mod.status == Cacheable.S_NEW or mod.status == Cacheable.S_UPDATED:
+                print('{} ({})'.format(mod.rel_filename, Cacheable.S_ENG[mod.status]))
                 print(mod.mod_title)
                 print(mod.mod_author)
                 print(mod.mod_time)
