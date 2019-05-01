@@ -166,7 +166,7 @@ class Cacheable(object):
         d['m'] = self.mtime
         return d
 
-    def _serialize(self):
+    def _serialize(self): # pragma: nocover
         """
         Returns a serializable dict describing ourselves
         """
@@ -181,7 +181,7 @@ class Cacheable(object):
         obj._unserialize(input_dict)
         return obj
 
-    def _unserialize(input_dict):
+    def _unserialize(input_dict): # pragma: nocover
         """
         Populates ourself given the specified serialized dict
         """
