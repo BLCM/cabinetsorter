@@ -139,8 +139,16 @@ class DirInfo(object):
 
 class Cacheable(object):
     """
-    A class which can be cached by our BaseCache
+    A class which is intended to be used with our FileCache.  In order to
+    be used properly by FileCache, an implementing class needs to do the
+    following:
+
+    1) Define cache_key
+    2) Support the proper constructor (see the `__init__` docs)
+    3) Implement `_serialize` and `_unserialize`
     """
+
+    cache_key = None
 
     (S_UNKNOWN,
             S_CACHED,
@@ -155,6 +163,16 @@ class Cacheable(object):
             }
 
     def __init__(self, mtime, initial_status=S_UNKNOWN):
+        """
+        Note that implementing classes, in order to be used with FileCache,
+        need to support a constructor with the following arguments:
+            - mtime
+            - dirinfo
+            - filename
+            - initial_status
+        Don't forget to call super().__init__(mtime, initial_status) in your
+        own constructor.
+        """
         self.mtime = mtime
         self.status = initial_status
 
@@ -181,7 +199,7 @@ class Cacheable(object):
         obj._unserialize(input_dict)
         return obj
 
-    def _unserialize(input_dict): # pragma: nocover
+    def _unserialize(self, input_dict): # pragma: nocover
         """
         Populates ourself given the specified serialized dict
         """
@@ -552,12 +570,17 @@ class Readme(Cacheable):
 
 class FileCache(object):
     """
-    Base caching class which we'll use for both mod files and READMEs
+    Base caching class which we'll use for both mod files and READMEs.
     """
 
     cache_version = 1
 
     def __init__(self, cache_class, filename):
+        """
+        Initialize a FileCache using the given `cache_class` and `filename`.
+        `cache_class` should be a `Cacheable` object, or at least one which
+        pretends to be.
+        """
         self.cache_class = cache_class
         self.filename = filename
         self.mapping = {}
@@ -655,12 +678,33 @@ class CabinetModInfo(object):
     def add_url(self, url):
         self.urls.append(url)
 
-class CabinetInfo(object):
+    def serialize(self):
+        """
+        Returns a dict which describes this entry
+        """
+        return {
+                'f': self.filename,
+                'c': self.categories,
+                'u': self.urls,
+                }
+
+    def unserialize(self, input_dict):
+        """
+        Unserialize ourselves from an input dictionary
+        """
+        self.filename = input_dict['f']
+        self.categories = input_dict['c']
+        self.urls = input_dict['u']
+
+class CabinetInfo(Cacheable):
     """
     Simple little class to read in and parse our `cabinet.info` files
     """
 
-    def __init__(self, rel_filename, error_list, valid_categories, filename=None):
+    cache_key = 'info'
+
+    #def __init__(self, mtime, rel_filename, error_list, valid_categories, filename=None, initial_status=Cacheable.S_UNKNOWN):
+    def __init__(self, mtime, dirinfo=None, filename=None, initial_status=Cacheable.S_UNKNOWN):
         """
         Initialize with the given `rel_filename`, which is the filename that
         will be reported in error messages.  Errors encountered while loading
@@ -670,22 +714,47 @@ class CabinetInfo(object):
         names).  Optionally specify `filename` to actually load the data right
         away.
         """
-        self.rel_filename = rel_filename
-        self.error_list = error_list
-        self.valid_categories = valid_categories
+        super().__init__(mtime, initial_status)
+        self.rel_filename = None
+        self.error_list = None
+        self.valid_categories = None
         self.mods = {}
         self.single_mod = False
-        if filename:
-            self.load_from_filename(filename)
 
-    def load_from_filename(self, filename):
+    def _serialize(self):
+        """
+        Returns a serializable dict describing ourselves
+        """
+        return {
+                'r': self.rel_filename,
+                's': self.single_mod,
+                'o': dict([(k, v.serialize()) for k, v in self.mods.items()]),
+                }
+
+    def _unserialize(self, input_dict):
+        """
+        Populates ourself given the specified serialized dict
+        """
+        self.rel_filename = input_dict['r']
+        self.single_mod = input_dict['s']
+        self.mods = {}
+        for k, mod_dict in input_dict['o'].items():
+            # 'null' is usually converted automatically to None when loading
+            # JSON, but JSON dicts can't have null as the key, so it becomes
+            # a string rather than a keyword, and we have to check for it.
+            if k == 'null':
+                k = None
+            self.mods[k] = CabinetModInfo(None, [])
+            self.mods[k].unserialize(mod_dict)
+
+    def load_from_filename(self, filename, rel_filename, error_list, valid_categories):
         """
         Load from the given filename
         """
         with open(filename) as df:
-            self.load_from_file(df)
+            self.load_from_file(df, rel_filename, error_list, valid_categories)
 
-    def load_from_file(self, df):
+    def load_from_file(self, df, rel_filename, error_list, valid_categories):
         """
         Loads our information from the given `filename`.  `rel_filename` will
         be the filename reported in errors, if we run into any, and should have
@@ -693,6 +762,10 @@ class CabinetInfo(object):
         """
         prev_modfile = None
         single_mod = False
+
+        self.rel_filename = rel_filename
+        self.error_list = error_list
+        self.valid_categories = valid_categories
 
         # Now read cabinet.info to find mod files
         for line in df.readlines():
@@ -796,6 +869,7 @@ class App(object):
     cabinet_dir = '/home/pez/git/b2patching/ModSorted.wiki'
     cache_filename = 'cache/modcache.json.xz'
     readme_cache_filename = 'cache/readmecache.json.xz'
+    info_cache_filename = 'cache/infocache.json.xz'
 
     categories = collections.OrderedDict([
             ('general', 'General Gameplay and Balance'),
@@ -818,6 +892,7 @@ class App(object):
         # Some initial vars
         self.mod_cache = FileCache(ModFile, self.cache_filename)
         self.readme_cache = FileCache(Readme, self.readme_cache_filename)
+        self.info_cache = FileCache(CabinetInfo, self.info_cache_filename)
         self.error_list = []
 
     def run(self):
@@ -845,12 +920,12 @@ class App(object):
                     # Read the file info
                     cabinet_filename = dirinfo['cabinet.info']
                     rel_cabinet_filename = cabinet_filename[len(self.repo_dir)+1:]
-                    cabinet_info = CabinetInfo(
-                            rel_cabinet_filename,
-                            self.error_list,
-                            self.categories,
-                            filename=cabinet_filename,
-                            )
+                    cabinet_info = self.info_cache.load(dirinfo, 'cabinet.info')
+                    if cabinet_info.status != Cacheable.S_CACHED:
+                        cabinet_info.load_from_filename(cabinet_filename,
+                                rel_cabinet_filename,
+                                self.error_list,
+                                self.categories)
 
                     # Loop through the mods described by cabinet.info and load them
                     processed_files = []
@@ -931,3 +1006,4 @@ class App(object):
         # Write out our mod cache
         self.mod_cache.save()
         self.readme_cache.save()
+        self.info_cache.save()
