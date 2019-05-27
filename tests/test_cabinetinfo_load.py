@@ -40,7 +40,7 @@ class CabinetInfoLoadTests(unittest.TestCase):
         Initialize some vars we'll need on every test.
         """
         self.errors = []
-        self.info = CabinetInfo('cabinet.info', self.errors, self.valid_cats)
+        self.info = CabinetInfo(0)
         self.df = io.StringIO()
 
     def load(self, lines):
@@ -53,7 +53,7 @@ class CabinetInfoLoadTests(unittest.TestCase):
         self.df.seek(0)
 
         # Read from it
-        self.info.load_from_file(self.df)
+        self.info.load_from_file(self.df, 'cabinet.info', self.errors, self.valid_cats)
 
     def test_single_unnamed_mod(self):
         self.load([

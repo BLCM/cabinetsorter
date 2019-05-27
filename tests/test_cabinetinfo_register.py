@@ -21,6 +21,7 @@
 # along with Borderlands ModCabinet Sorter.  If not, see
 # <https://www.gnu.org/licenses/>.
 
+import io
 import unittest
 from cabinetsorter.app import CabinetInfo
 
@@ -39,7 +40,9 @@ class CabinetInfoRegisterTests(unittest.TestCase):
         Initialize some vars we'll need on every test.
         """
         self.errors = []
-        self.info = CabinetInfo('cabinet.info', self.errors, self.valid_cats)
+        self.df = io.StringIO()
+        self.info = CabinetInfo(0)
+        self.info.load_from_file(self.df, 'cabinet.info', self.errors, self.valid_cats)
 
     def test_single_cat(self):
         self.assertEqual(self.info.register('xyzzy', 'cat1'), True)
