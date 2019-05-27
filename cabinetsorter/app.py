@@ -604,11 +604,12 @@ class FileCache(object):
         with lzma.open(self.filename, 'wt', encoding='utf-8') as df:
             json.dump(save_dict, df)
 
-    def load(self, dirinfo, filename):
+    def load(self, dirinfo, filename, **extra):
         """
         Loads an entry from the given `filename` (using `dirinfo` as its base),
         if its mtime has been changed or was not previously known.  Otherwise
-        return our previously-cached version
+        return our previously-cached version.  Extra dict arguments, if specified,
+        will be passed in to the constructor.
         """
         full_filename = dirinfo[filename]
         mtime = os.stat(full_filename).st_mtime
@@ -617,7 +618,7 @@ class FileCache(object):
                 initial_status = Cacheable.S_NEW
             else:
                 initial_status = Cacheable.S_UPDATED
-            self.mapping[full_filename] = self.cache_class(mtime, dirinfo, filename, initial_status)
+            self.mapping[full_filename] = self.cache_class(mtime, dirinfo, filename, initial_status, **extra)
         return self.mapping[full_filename]
 
     def items(self):
@@ -703,16 +704,21 @@ class CabinetInfo(Cacheable):
 
     cache_key = 'info'
 
-    #def __init__(self, mtime, rel_filename, error_list, valid_categories, filename=None, initial_status=Cacheable.S_UNKNOWN):
-    def __init__(self, mtime, dirinfo=None, filename=None, initial_status=Cacheable.S_UNKNOWN):
+    def __init__(self, mtime, dirinfo=None, filename=None, initial_status=Cacheable.S_UNKNOWN,
+            rel_filename=None, error_list=None, valid_categories=None):
         """
-        Initialize with the given `rel_filename`, which is the filename that
-        will be reported in error messages.  Errors encountered while loading
-        will be appended to `error_list`.  Valid categories for mods to live in
-        is specified by `valid_categories` (should be an object which can be
-        checked via `in`, such as a set, or a dict whose keys are the category
-        names).  Optionally specify `filename` to actually load the data right
-        away.
+        Initialize with the given `mtime` and a bunch of other optional info.  In
+        general this will only really be called from the `FileCache` class, when
+        it encounters a situation where a newer (or just new) file is found on
+        disk.  To initialize an object just for testing, all that's needed is `mtime`.
+        Optionally, though, pass in:
+            `dirinfo` - A DirInfo object describing the directory we're found in
+            `filename` - Our filename (without path)
+            `initial_status` - Our initial cache status
+            `rel_filename` - The relative filename to report to the user in errors
+            `error_list` - An array we can append load errors to
+            `valid_categories` - A dict describing the valid categories which can be
+                found in the info file
         """
         super().__init__(mtime, initial_status)
         self.rel_filename = None
@@ -720,6 +726,9 @@ class CabinetInfo(Cacheable):
         self.valid_categories = None
         self.mods = {}
         self.single_mod = False
+        if rel_filename:
+            full_filename = dirinfo[filename]
+            self.load_from_filename(full_filename, rel_filename, error_list, valid_categories)
 
     def _serialize(self):
         """
@@ -920,12 +929,11 @@ class App(object):
                     # Read the file info
                     cabinet_filename = dirinfo['cabinet.info']
                     rel_cabinet_filename = cabinet_filename[len(self.repo_dir)+1:]
-                    cabinet_info = self.info_cache.load(dirinfo, 'cabinet.info')
-                    if cabinet_info.status != Cacheable.S_CACHED:
-                        cabinet_info.load_from_filename(cabinet_filename,
-                                rel_cabinet_filename,
-                                self.error_list,
-                                self.categories)
+                    cabinet_info = self.info_cache.load(dirinfo, 'cabinet.info',
+                            rel_filename=rel_cabinet_filename,
+                            error_list=self.error_list,
+                            valid_categories=self.categories,
+                            )
 
                     # Loop through the mods described by cabinet.info and load them
                     processed_files = []

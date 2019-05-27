@@ -28,7 +28,7 @@ import json
 import shutil
 import unittest
 import tempfile
-from cabinetsorter.app import FileCache, ModFile, Readme, DirInfo
+from cabinetsorter.app import FileCache, ModFile, Readme, DirInfo, CabinetInfo, CabinetModInfo
 
 class FileCacheTests(unittest.TestCase):
     """
@@ -36,6 +36,11 @@ class FileCacheTests(unittest.TestCase):
     Readme functionality in here, though we do load+save both, just
     to be sure.
     """
+
+    valid_cats = {
+            'cat1': 'Category One',
+            'cat2': 'Category Two',
+            }
 
     def setUp(self):
         """
@@ -92,6 +97,10 @@ class FileCacheTests(unittest.TestCase):
     def test_readme_construct(self):
         filename = self.create_cache('cache', {'version': 1, Readme.cache_key: {}})
         self.assertIsNotNone(FileCache(Readme, filename))
+
+    def test_cabinetinfo_construct(self):
+        filename = self.create_cache('cache', {'version': 1, CabinetInfo.cache_key: {}})
+        self.assertIsNotNone(FileCache(CabinetInfo, filename))
 
     def test_old_version(self):
         filename = self.create_cache('cache', {'version': 9999, ModFile.cache_key: {}})
@@ -168,6 +177,44 @@ class FileCacheTests(unittest.TestCase):
         self.assertIn('filename2', cache)
         self.assertEqual(cache['filename'].mapping['(default)'], ['Testing Readme'])
         self.assertEqual(cache['filename2'].mapping['(default)'], ['Testing Readme 2'])
+
+    def test_cabinetinfo_single(self):
+        info = CabinetInfo(0)
+        info.rel_filename = 'cabinet.info'
+        info.single_mod = True
+        filename = self.create_cache('cache', {
+            'version': 1,
+            CabinetInfo.cache_key: {
+                'filename': info.serialize(),
+                }
+            })
+        cache = FileCache(CabinetInfo, filename)
+        self.assertIsNotNone(cache)
+        self.assertEqual(len(cache), 1)
+        self.assertIn('filename', cache)
+        self.assertEqual(cache['filename'].rel_filename, 'cabinet.info')
+
+    def test_cabinetinfo_two(self):
+        info = CabinetInfo(0)
+        info.rel_filename = 'cabinet.info'
+        info.single_mod = True
+        info2 = CabinetInfo(0)
+        info2.rel_filename = 'cabinet2.info'
+        info2.single_mod = True
+        filename = self.create_cache('cache', {
+            'version': 1,
+            CabinetInfo.cache_key: {
+                'filename': info.serialize(),
+                'filename2': info2.serialize(),
+                }
+            })
+        cache = FileCache(CabinetInfo, filename)
+        self.assertIsNotNone(cache)
+        self.assertEqual(len(cache), 2)
+        self.assertIn('filename', cache)
+        self.assertIn('filename2', cache)
+        self.assertEqual(cache['filename'].rel_filename, 'cabinet.info')
+        self.assertEqual(cache['filename2'].rel_filename, 'cabinet2.info')
 
     def test_save_mod_empty(self):
         filename = os.path.join(self.tmpdir, 'cache')
@@ -257,6 +304,53 @@ class FileCacheTests(unittest.TestCase):
             self.assertIn('filename', saved[Readme.cache_key])
             self.assertIn('filename2', saved[Readme.cache_key])
 
+    def test_save_cabinetinfo_empty(self):
+        filename = os.path.join(self.tmpdir, 'cache')
+        cache = FileCache(CabinetInfo, filename)
+        cache.save()
+        self.assertTrue(os.path.exists(filename))
+        with lzma.open(filename, 'rt', encoding='utf-8') as df:
+            saved = json.load(df)
+            self.assertEqual(saved, {
+                'version': FileCache.cache_version,
+                CabinetInfo.cache_key: {},
+                })
+
+    def test_save_cabinetinfo_single(self):
+        info = CabinetInfo(0)
+        info.rel_filename = 'cabinet.info'
+        info.single_mod = True
+        filename = os.path.join(self.tmpdir, 'cache')
+        cache = FileCache(CabinetInfo, filename)
+        cache.mapping['filename'] = info
+        cache.save()
+        self.assertTrue(os.path.exists(filename))
+        with lzma.open(filename, 'rt', encoding='utf-8') as df:
+            saved = json.load(df)
+            self.assertEqual(saved['version'], FileCache.cache_version)
+            self.assertEqual(len(saved[CabinetInfo.cache_key]), 1)
+            self.assertIn('filename', saved[CabinetInfo.cache_key])
+
+    def test_save_cabinetinfo_two(self):
+        info = CabinetInfo(0)
+        info.rel_filename = 'cabinet.info'
+        info.single_mod = True
+        info2 = CabinetInfo(0)
+        info2.rel_filename = 'cabinet2.info'
+        info2.single_mod = True
+        filename = os.path.join(self.tmpdir, 'cache')
+        cache = FileCache(CabinetInfo, filename)
+        cache.mapping['filename'] = info
+        cache.mapping['filename2'] = info2
+        cache.save()
+        self.assertTrue(os.path.exists(filename))
+        with lzma.open(filename, 'rt', encoding='utf-8') as df:
+            saved = json.load(df)
+            self.assertEqual(saved['version'], FileCache.cache_version)
+            self.assertEqual(len(saved[CabinetInfo.cache_key]), 2)
+            self.assertIn('filename', saved[CabinetInfo.cache_key])
+            self.assertIn('filename2', saved[CabinetInfo.cache_key])
+
     def test_load_mod_not_found(self):
         """
         Not actually sure if this is what we should do here; for now we're
@@ -283,6 +377,21 @@ class FileCacheTests(unittest.TestCase):
         filename = os.path.join(self.tmpdir, 'cache')
         cache = FileCache(Readme, filename)
         cache.mapping['filename'] = readme
+        cache.save()
+        dirinfo = DirInfo(self.tmpdir, '', ['filename'])
+        with self.assertRaises(FileNotFoundError) as cm:
+            cache.load(dirinfo, 'filename')
+
+    def test_load_cabinetinfo_not_found(self):
+        """
+        Ditto above.
+        """
+        info = CabinetInfo(0)
+        info.rel_filename = 'cabinet.info'
+        info.single_mod = True
+        filename = os.path.join(self.tmpdir, 'cache')
+        cache = FileCache(CabinetInfo, filename)
+        cache.mapping['filename'] = info
         cache.save()
         dirinfo = DirInfo(self.tmpdir, '', ['filename'])
         with self.assertRaises(FileNotFoundError) as cm:
@@ -392,3 +501,69 @@ class FileCacheTests(unittest.TestCase):
         self.assertIn(readme_filename, cache)
         self.assertEqual(loaded_readme.mapping['(default)'], ['testing'])
 
+    def test_load_cabinetinfo_new_file(self):
+        info_filename = self.make_file('', 'filename', ['cat1'], mtime=42)
+        cache_filename = os.path.join(self.tmpdir, 'cache')
+        cache = FileCache(CabinetInfo, cache_filename)
+        cache.save()
+
+        # Reload from disk, just in case anything's weird
+        cache = FileCache(CabinetInfo, cache_filename)
+        dirinfo = DirInfo('/tmp/doesnotexist', self.tmpdir, ['filename'])
+        errors = []
+        loaded_info = cache.load(dirinfo, 'filename',
+                rel_filename='filename', error_list=errors, valid_categories=self.valid_cats)
+        self.assertIsNotNone(loaded_info)
+        self.assertEqual(loaded_info.status, CabinetInfo.S_NEW)
+        self.assertIn(info_filename, cache)
+        self.assertTrue(loaded_info.single_mod)
+        self.assertIn(None, loaded_info.mods)
+        self.assertEqual(loaded_info[None].categories, ['cat1'])
+
+    def test_load_cabinetinfo_same_mtimes(self):
+        info_filename = self.make_file('', 'filename', ['cat1'], mtime=42)
+        info = CabinetInfo(42)
+        info.single_mod = True
+        info.rel_filename = 'filename'
+        info.mods[None] = CabinetModInfo('modname', ['cat1'])
+        cache_filename = os.path.join(self.tmpdir, 'cache')
+        cache = FileCache(CabinetInfo, cache_filename)
+        cache.mapping[info_filename] = info
+        cache.save()
+
+        # Reload from disk, just in case anything's weird
+        cache = FileCache(CabinetInfo, cache_filename)
+        dirinfo = DirInfo('/tmp/doesnotexist', self.tmpdir, ['filename'])
+        errors = []
+        loaded_info = cache.load(dirinfo, 'filename',
+                rel_filename='filename', error_list=errors, valid_categories=self.valid_cats)
+        self.assertIsNotNone(loaded_info)
+        self.assertEqual(loaded_info.status, CabinetInfo.S_CACHED)
+        self.assertIn(info_filename, cache)
+        self.assertTrue(loaded_info.single_mod)
+        self.assertIn(None, loaded_info.mods)
+        self.assertEqual(loaded_info[None].categories, ['cat1'])
+
+    def test_load_cabinetinfo_newer(self):
+        info_filename = self.make_file('', 'filename', ['cat1'], mtime=84)
+        info = CabinetInfo(42)
+        info.single_mod = True
+        info.rel_filename = 'filename'
+        info.mods[None] = CabinetModInfo('modname', ['cat1'])
+        cache_filename = os.path.join(self.tmpdir, 'cache')
+        cache = FileCache(CabinetInfo, cache_filename)
+        cache.mapping[info_filename] = info
+        cache.save()
+
+        # Reload from disk, just in case anything's weird
+        cache = FileCache(CabinetInfo, cache_filename)
+        dirinfo = DirInfo('/tmp/doesnotexist', self.tmpdir, ['filename'])
+        errors = []
+        loaded_info = cache.load(dirinfo, 'filename',
+                rel_filename='filename', error_list=errors, valid_categories=self.valid_cats)
+        self.assertIsNotNone(loaded_info)
+        self.assertEqual(loaded_info.status, CabinetInfo.S_UPDATED)
+        self.assertIn(info_filename, cache)
+        self.assertTrue(loaded_info.single_mod)
+        self.assertIn(None, loaded_info.mods)
+        self.assertEqual(loaded_info[None].categories, ['cat1'])
