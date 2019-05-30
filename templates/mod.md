@@ -2,7 +2,7 @@
 
 **Author:** {{ mod.mod_author }}
 
-**Last Updated:** {{ mod.mod_time }}
+**Last Updated:** {{ mod.mod_time.strftime('%B %d, %Y') }}
 
 **In Categories:** {{ mod.get_cat_links(cats) }}
 

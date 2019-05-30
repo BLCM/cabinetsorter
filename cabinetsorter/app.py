@@ -1224,7 +1224,7 @@ class App(object):
         # Finally, our 'About' page.  This always gets written.
         with open(os.path.join(self.cabinet_dir, about_filename), 'w') as df:
             content = self.about_template.render({
-                'gen_time': datetime.datetime.now(),
+                'gen_time': datetime.datetime.now(datetime.timezone(datetime.timedelta())),
                 'errors': self.error_list,
                 })
             df.write(content)
