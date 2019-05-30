@@ -1319,6 +1319,8 @@ class App(object):
                 })
             df.write(content)
 
+        # TODO: Gotta delete pages which no longer exist (well, and also git integration)
+
         # Write out our mod cache
         self.mod_cache.save()
         self.readme_cache.save()
