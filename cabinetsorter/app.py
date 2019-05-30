@@ -148,6 +148,9 @@ class Cacheable(object):
     1) Define cache_key
     2) Support the proper constructor (see the `__init__` docs)
     3) Implement `_serialize` and `_unserialize`
+
+    Cacheable objects which do not have a file backend can omit the constructor,
+    though you'll have to cope with having a "pretend" mtime with each object.
     """
 
     cache_key = None
@@ -206,6 +209,49 @@ class Cacheable(object):
         Populates ourself given the specified serialized dict
         """
         raise Exception('Not implemented')
+
+class Author(Cacheable):
+    """
+    Info about a mod author.
+    """
+
+    cache_key = 'author'
+
+    def __init__(self, mtime, initial_status=Cacheable.S_UNKNOWN, name=None):
+        super().__init__(mtime, initial_status)
+        self.name = name
+        self.mods = {}
+        self.cur_mods = {}
+
+    def _serialize(self):
+        return {
+                'n': self.name,
+                'g': dict([(game, list(modset)) for (game, modset) in self.mods.items()]),
+                }
+
+    def _unserialize(self, input_dict):
+        self.name = input_dict['n']
+        for (game, modlist) in input_dict['g'].items():
+            self.mods[game] = set(modlist)
+
+    def add_mod(self, mod):
+        if mod.game not in self.cur_mods:
+            self.cur_mods[mod.game] = set()
+        self.cur_mods[mod.game].add(mod.wiki_link())
+
+    def check_modlist(self):
+        if self.cur_mods != self.mods:
+            self.mods = self.cur_mods
+            self.status = self.S_UPDATED
+        return self.status
+
+    def wiki_filename(self):
+        global wiki_filename
+        return wiki_filename(self.name)
+
+    def wiki_link(self):
+        global wiki_link
+        return wiki_link(self.name, self.name)
 
 class ModFile(Cacheable):
     """
@@ -608,6 +654,8 @@ class Readme(Cacheable):
 class FileCache(object):
     """
     Base caching class which we'll use for both mod files and READMEs.
+    This can be used as a pure-data caching class by avoiding the use
+    of the `load()` method.
     """
 
     cache_version = 1
@@ -675,6 +723,12 @@ class FileCache(object):
         Convenience function to be able to use this sort of like a dict
         """
         return self.mapping.keys()
+
+    def __setitem__(self, key, value):
+        """
+        Convenience function to be able to use this sort of like a dict
+        """
+        self.mapping[key] = value
 
     def __getitem__(self, key):
         """
@@ -988,6 +1042,7 @@ class App(object):
     cache_filename = 'cache/modcache.json.xz'
     readme_cache_filename = 'cache/readmecache.json.xz'
     info_cache_filename = 'cache/infocache.json.xz'
+    author_cache_filename = 'cache/authorcache.json.xz'
 
     categories = collections.OrderedDict([
             ('general', Category('General Gameplay and Balance')),
@@ -1011,6 +1066,7 @@ class App(object):
         self.mod_cache = FileCache(ModFile, self.cache_filename)
         self.readme_cache = FileCache(Readme, self.readme_cache_filename)
         self.info_cache = FileCache(CabinetInfo, self.info_cache_filename)
+        self.author_cache = FileCache(Author, self.author_cache_filename)
         self.error_list = []
 
         # Grab Jinja templates
@@ -1020,6 +1076,7 @@ class App(object):
         self.mod_template = jinja_env.get_template('mod.md')
         self.about_template = jinja_env.get_template('about.md')
         self.sidebar_template = jinja_env.get_template('sidebar.md')
+        self.author_template = jinja_env.get_template('author.md')
 
     def run(self):
         """
@@ -1123,6 +1180,14 @@ class App(object):
                         # Set our URLs (likewise, if from cache then they may have changed)
                         processed_file.set_urls(cabinet_info_mod.urls)
 
+                        # Add this mod to an author obj
+                        if processed_file.mod_author:
+                            if processed_file.mod_author not in self.author_cache:
+                                self.author_cache[processed_file.mod_author] = Author(0,
+                                        initial_status=Author.S_NEW,
+                                        name=processed_file.mod_author)
+                            self.author_cache[processed_file.mod_author].add_mod(processed_file)
+
         # Some console reporting, for interactive testing.
         if False:
             for mod in self.mod_cache.values():
@@ -1188,7 +1253,8 @@ class App(object):
                             self.cat_template.render({
                                 'game': game,
                                 'cat': cat,
-                                'mods': sorted(seen_cats[game.abbreviation][cat_key])
+                                'mods': sorted(seen_cats[game.abbreviation][cat_key]),
+                                'authors': self.author_cache,
                                 }),
                             )
 
@@ -1213,6 +1279,17 @@ class App(object):
                     })
                 )
 
+        # Write out Author pages
+        for author in self.author_cache.values():
+            author_filename = author.wiki_filename()
+            if author.check_modlist() != Author.S_CACHED or author_filename not in wiki_files:
+                full_author = os.path.join(self.cabinet_dir, author_filename)
+                with open(full_author, 'w') as df:
+                    df.write(self.author_template.render({
+                        'author': author,
+                        'games': self.games,
+                        }))
+
         # Write out our individual mods
         for mod in self.mod_cache.values():
             mod_filename = mod.wiki_filename()
@@ -1228,6 +1305,7 @@ class App(object):
                         'base_url': self.base_url,
                         'dl_base_url': self.dl_base_url,
                         'cats': self.categories,
+                        'authors': self.author_cache,
                         })
                     full_filename = os.path.join(self.cabinet_dir, mod_filename)
                     with open(full_filename, 'w') as df:
@@ -1245,6 +1323,7 @@ class App(object):
         self.mod_cache.save()
         self.readme_cache.save()
         self.info_cache.save()
+        self.author_cache.save()
 
     def write_wiki_file(self, wiki_files, filename, content):
         """

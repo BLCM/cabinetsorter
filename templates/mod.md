@@ -1,6 +1,6 @@
 # {{ mod.mod_title }}
 
-**Author:** {{ mod.mod_author }}
+**Author:** {{ authors[mod.mod_author].wiki_link() }}
 
 **Last Updated:** {{ mod.mod_time.strftime('%B %d, %Y') }}
 
