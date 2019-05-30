@@ -18,3 +18,11 @@ this site was: **{{ gen_time.strftime('%B %d, %Y %I:%M %p %z (%Z)') }}**
 {% else %}
 No errors were encountered while generating the wiki.
 {% endif %}
+
+## Code
+
+The code which generates this wiki is freely available under the
+[GNU GPLv3 or later](https://www.gnu.org/licenses/quick-guide-gplv3.html),
+and is available on [BLCM's cabinetsorter repo](https://github.com/BLCM/cabinetsorter).
+I can't imagine it'd be useful for anything but this one specific
+purpose, but there it is, anyway.
