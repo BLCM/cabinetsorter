@@ -225,7 +225,7 @@ class ModFile(Cacheable):
         self.urls = []
         self.categories = set()
         self.re = Re()
-        self.game = game.abbreviation
+        self.game = game
 
         if dirinfo:
             # This is when we're actually loading from a file
@@ -468,7 +468,7 @@ class ModFile(Cacheable):
         """
         return ', '.join([
             c.wiki_link_abbrev(self.game) for c in [
-                categories[catname] for catname in self.categories
+                categories[catname] for catname in sorted(self.categories)
                 ]
             ])
 
@@ -949,6 +949,9 @@ class Category(object):
         global wiki_link
         return wiki_link(self.title, '{} {}'.format(game_abbrev, self.title))
 
+    def __lt__(self, other):
+        return self.title < other.title
+
 class Game(object):
     """
     Class to hold a bit of info about a game.  Basically just a
@@ -1072,24 +1075,24 @@ class App(object):
                         # Scan for which file to use -- just a single mod file in
                         # this dir.  First look for .blcm files.
                         for blcm_file in dirinfo.get_all_with_ext('blcm'):
-                            processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, blcm_file, game=game)))
+                            processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, blcm_file, game=game.abbreviation)))
                             # We're just going to always take the very first .blcm file we find
                             break
                         if len(processed_files) == 0:
                             for txt_file in dirinfo.get_all_with_ext('txt'):
                                 if 'readme' not in txt_file.lower():
-                                    processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, txt_file, game=game)))
+                                    processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, txt_file, game=game.abbreviation)))
                                     # Again, just grab the first one
                                     break
                         if len(processed_files) == 0:
                             for random_file in dirinfo.get_all():
                                 if 'readme' not in random_file.lower():
-                                    processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, random_file, game=game)))
+                                    processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, random_file, game=game.abbreviation)))
                                     # Again, just grab the first one
                                     break
                     else:
                         for cabinet_info_mod in cabinet_info.modlist():
-                            processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, cabinet_info_mod.filename, game=game)))
+                            processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, cabinet_info_mod.filename, game=game.abbreviation)))
 
                     # Do Stuff with each file we got
                     for (cabinet_info_mod, processed_file) in processed_files:
