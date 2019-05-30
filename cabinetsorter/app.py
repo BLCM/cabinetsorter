@@ -26,6 +26,7 @@ import re
 import json
 import lzma
 import jinja2
+import urllib
 import datetime
 import collections
 import Levenshtein
@@ -449,6 +450,13 @@ class ModFile(Cacheable):
     def wiki_link(self):
         global wiki_link
         return wiki_link(self.mod_title, self.mod_title)
+
+    def rel_url(self):
+        """
+        Returns a relative URL which we can add to our base_url to
+        construct a full link to the mod.
+        """
+        return urllib.parse.quote(self.rel_filename)
 
 class Readme(Cacheable):
     """
@@ -944,6 +952,8 @@ class App(object):
     """
 
     # Dirs that we're looking into, and dirs that we're writing to
+    base_url = 'https://github.com/BLCM/BLCMods/tree/master/'
+    dl_base_url = 'https://raw.githubusercontent.com/BLCM/BLCMods/master/'
     repo_dir = '/home/pez/git/b2patching/BLCMods.direct'
     games = [
             Game('BL2', 'Borderlands 2 mods', 'Borderlands 2'),
@@ -1171,6 +1181,8 @@ class App(object):
             if mod.status != ModFile.S_CACHED or mod_filename not in wiki_files:
                 content = self.mod_template.render({
                     'mod': mod,
+                    'base_url': self.base_url,
+                    'dl_base_url': self.dl_base_url,
                     })
                 full_filename = os.path.join(self.cabinet_dir, mod.wiki_filename())
                 with open(full_filename, 'w') as df:

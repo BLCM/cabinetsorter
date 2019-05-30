@@ -3,6 +3,16 @@
 **Author:** {{ mod.mod_author }}
 **Last Updated:** {{ mod.mod_time }}
 
+# Download Methods
+
+| Site | Notes |
+| ---- | ----- |
+| [Download from Github]({{ dl_base_url }}/{{ mod.rel_url() }}) | *(right click and choose "Save Link As")* |
+| [View on Github]({{ base_url }}/{{ mod.rel_url() }}) | *(right-click on "Raw" or "Download" button and choose "Save Link As" to download)* |
+{%- if mod.nexus_link %}
+| [Download from Nexus]({{ mod.nexus_link }}) | |
+{%- endif %}
+
 {% if mod.mod_desc|length > 0 %}
 ## Description
 {{ mod.mod_desc|join("\n") }}
