@@ -2,6 +2,7 @@
 
 - [[Main Page|Home]]
 - [[About ModCabinet Wiki]]
+- [[Contributing to ModCabinet]]
 
 {%- for game in games %}
 

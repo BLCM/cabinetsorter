@@ -7,3 +7,8 @@ Wiki](https://github.com/BLCM/BLCMods/wiki) is your best starting point.
 
 * [[Borderlands 2 Mods|Borderlands 2]]
 * [[Borderlands: The Pre-Sequel Mods|Pre Sequel]]
+
+# Other Pages
+
+* [[About ModCabinet Wiki]]
+* [[Contributing to ModCabinet]]
