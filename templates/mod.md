@@ -16,14 +16,14 @@
 | [Download from Nexus]({{ mod.nexus_link }}) | |
 {%- endif %}
 
-{% if mod.mod_desc|length > 0 %}
-## Description
-{{ mod.mod_desc|join("\n") }}
-{% endif %}
-
 {% if mod.readme_desc|length > 0 %}
 ## README
 {{ mod.readme_desc|join("\n") }}
+{% endif %}
+
+{% if mod.mod_desc|length > 0 %}
+## Description (from inside mod)
+{{ mod.mod_desc|join("\n") }}
 {% endif %}
 
 {% if mod.screenshots|length > 0 %}
