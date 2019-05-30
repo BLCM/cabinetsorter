@@ -963,6 +963,10 @@ class Game(object):
         self.dir_name = dir_name
         self.title = title
 
+    def wiki_filename(self):
+        global wiki_filename
+        return wiki_filename(self.title)
+
     def wiki_link_back(self):
         global wiki_link
         return wiki_link('← Go Back', self.title)
@@ -1014,6 +1018,7 @@ class App(object):
         self.game_template = jinja_env.get_template('game.md')
         self.cat_template = jinja_env.get_template('category.md')
         self.mod_template = jinja_env.get_template('mod.md')
+        self.about_template = jinja_env.get_template('about.md')
 
     def run(self):
         """
@@ -1025,8 +1030,10 @@ class App(object):
         for game in self.games.values():
             seen_cats[game.abbreviation] = {}
 
-        # Set up a reserved pages list
-        reserved_pages = set()
+        # Set up a reserved and created pages set
+        about_filename = 'About-ModCabinet-Wiki.md'
+        reserved_pages = set([about_filename])
+        created_pages = set([about_filename])
 
         # Anything in our static_pages dir should be reserved
         static_pages = {}
@@ -1038,7 +1045,7 @@ class App(object):
 
         # Add all game/category pages to our reserved_pages list
         for game in self.games.values():
-            reserved_pages.add(wiki_filename(game.title))
+            reserved_pages.add(game.wiki_filename())
             for cat in self.categories.values():
                 reserved_pages.add(cat.wiki_filename(game))
 
@@ -1158,9 +1165,9 @@ class App(object):
 
         # Write out updated static pages, if need be
         for (filename, content) in static_pages.items():
+            created_pages.add(filename)
             self.write_wiki_file(wiki_files,
                     filename,
-                    os.path.join(self.cabinet_dir, filename),
                     content,
                     )
 
@@ -1172,55 +1179,68 @@ class App(object):
                     game_cats.append(cat)
 
                     # Write out the category page
-                    content = self.cat_template.render({
-                        'game': game,
-                        'cat': cat,
-                        'mods': sorted(seen_cats[game.abbreviation][cat_key])
-                        })
                     cat_filename = cat.wiki_filename(game)
+                    created_pages.add(cat_filename)
                     self.write_wiki_file(wiki_files,
                             cat_filename,
-                            os.path.join(self.cabinet_dir, cat_filename),
-                            content,
+                            self.cat_template.render({
+                                'game': game,
+                                'cat': cat,
+                                'mods': sorted(seen_cats[game.abbreviation][cat_key])
+                                }),
                             )
 
             # Write out the game page, linking to all categories which have mods
-            content = self.game_template.render({
-                'game': game,
-                'categories': [c.wiki_link(game) for c in game_cats],
-                })
-            game_filename = wiki_filename(game.title)
+            game_filename = game.wiki_filename()
+            created_pages.add(game_filename)
             self.write_wiki_file(wiki_files,
                     game_filename,
-                    os.path.join(self.cabinet_dir, game_filename),
-                    content,
+                    self.game_template.render({
+                        'game': game,
+                        'categories': [c.wiki_link(game) for c in game_cats],
+                        })
                     )
 
         # Write out our individual mods
         for mod in self.mod_cache.values():
             mod_filename = mod.wiki_filename()
-            if mod.status != ModFile.S_CACHED or mod_filename not in wiki_files:
-                content = self.mod_template.render({
-                    'mod': mod,
-                    'base_url': self.base_url,
-                    'dl_base_url': self.dl_base_url,
-                    'cats': self.categories,
-                    })
-                full_filename = os.path.join(self.cabinet_dir, mod.wiki_filename())
-                with open(full_filename, 'w') as df:
-                    df.write(content)
+            if mod_filename in reserved_pages:
+                self.error_list.append('ERROR: {} uses a reserved name'.format(mod.rel_filename))
+            elif mod_filename in created_pages:
+                self.error_list.append('ERROR: {} has the same name as an already-created mod'.format(mod.rel_filename))
+            else:
+                created_pages.add(mod_filename)
+                if mod.status != ModFile.S_CACHED or mod_filename not in wiki_files:
+                    content = self.mod_template.render({
+                        'mod': mod,
+                        'base_url': self.base_url,
+                        'dl_base_url': self.dl_base_url,
+                        'cats': self.categories,
+                        })
+                    full_filename = os.path.join(self.cabinet_dir, mod_filename)
+                    with open(full_filename, 'w') as df:
+                        df.write(content)
+
+        # Finally, our 'About' page.  This always gets written.
+        with open(os.path.join(self.cabinet_dir, about_filename), 'w') as df:
+            content = self.about_template.render({
+                'gen_time': datetime.datetime.now(),
+                'errors': self.error_list,
+                })
+            df.write(content)
 
         # Write out our mod cache
         self.mod_cache.save()
         self.readme_cache.save()
         self.info_cache.save()
 
-    def write_wiki_file(self, wiki_files, filename, full_filename, content):
+    def write_wiki_file(self, wiki_files, filename, content):
         """
         Write out a file to the wiki, so long as the content has changed
         """
         # TODO: is this method, um, dumb?  It's only used on staticish pages, so
         # we should maybe just write indiscriminately.  Or maybe use a FileCache?
+        full_filename = os.path.join(self.cabinet_dir, filename)
         do_write = True
         if filename in wiki_files:
             with open(full_filename) as df:
