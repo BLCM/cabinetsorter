@@ -25,6 +25,7 @@ import os
 import re
 import json
 import lzma
+import jinja2
 import datetime
 import collections
 import Levenshtein
@@ -434,6 +435,20 @@ class ModFile(Cacheable):
 
         # Finally, add it in.
         self.mod_desc.append(line)
+
+    def __lt__(self, other):
+        """
+        Sort by mod title
+        """
+        return self.mod_title < other.mod_title
+
+    def wiki_filename(self):
+        global wiki_filename
+        return wiki_filename(self.mod_title)
+
+    def wiki_link(self):
+        global wiki_link
+        return wiki_link(self.mod_title, self.mod_title)
 
 class Readme(Cacheable):
     """
@@ -864,6 +879,65 @@ class CabinetInfo(Cacheable):
         """
         return len(self.mods)
 
+def wiki_filename(page_title, with_ext=True):
+    """
+    Given a page title, generate a valid wiki filename.  Every char except forward
+    slashes are theoretically valid, and spaces become dashes.
+    """
+    if with_ext:
+        format_str = '{}.md'
+    else:
+        format_str = '{}'
+    return format_str.format(page_title.replace(' ', '-').replace('/', '-'))
+
+def wiki_link(text, link, external=False):
+    """
+    Construct a link to another page on the wiki, given the human-readable `text`
+    and the page title `link`.  If `external` is true, will generate an external
+    full-URL link, rather than the in-wiki link style
+    """
+    if external:
+        format_str = '[{}]({})'
+    else:
+        format_str = '[[{}|{}]]'
+    return format_str.format(
+            text,
+            link.replace('/', ' '),
+            )
+
+class Category(object):
+    """
+    Class to hold a bit of info about categories.  Very little
+    information here, really - just a wrapper around some wiki-
+    linking functions, really.
+    """
+
+    def __init__(self, title):
+        self.title = title
+
+    def wiki_filename(self, game):
+        global wiki_filename
+        return wiki_filename('{} {}'.format(game.abbreviation, self.title))
+
+    def wiki_link(self, game):
+        global wiki_link
+        return wiki_link(self.title, '{} {}'.format(game.abbreviation, self.title))
+
+class Game(object):
+    """
+    Class to hold a bit of info about a game.  Basically just a
+    glorified dict.
+    """
+
+    def __init__(self, abbreviation, dir_name, title):
+        self.abbreviation = abbreviation
+        self.dir_name = dir_name
+        self.title = title
+
+    def wiki_link_back(self):
+        global wiki_link
+        return wiki_link('← Go Back', self.title)
+
 class App(object):
     """
     Main app
@@ -871,29 +945,29 @@ class App(object):
 
     # Dirs that we're looking into, and dirs that we're writing to
     repo_dir = '/home/pez/git/b2patching/BLCMods.direct'
-    games = {
-            'BL2': 'Borderlands 2 mods',
-            'TPS': 'Pre Sequel Mods',
-            }
+    games = [
+            Game('BL2', 'Borderlands 2 mods', 'Borderlands 2'),
+            Game('TPS', 'Pre Sequel Mods', 'Pre-Sequel'),
+            ]
     cabinet_dir = '/home/pez/git/b2patching/ModSorted.wiki'
     cache_filename = 'cache/modcache.json.xz'
     readme_cache_filename = 'cache/readmecache.json.xz'
     info_cache_filename = 'cache/infocache.json.xz'
 
     categories = collections.OrderedDict([
-            ('general', 'General Gameplay and Balance'),
-            ('skills', 'Characters and Skills'),
-            ('farming', 'Farming and Looting'),
-            ('gear', 'Weapons and Gear'),
-            ('tools', 'Tools and Misc'),
-            ('gamemodes', 'Game Modes'),
-            ('overhaul', 'Overhauls'),
-            ('qol', 'Quality of Life'),
-            ('skins', 'Visuals and Standalone Skins'),
-            ('cheats', 'Cheat Mods'),
-            ('wip', 'Works in Progress'),
-            ('resources', 'Modder\'s Resources'),
-            ('misc', 'Miscellaneous Mods'),
+            ('general', Category('General Gameplay and Balance')),
+            ('skills', Category('Characters and Skills')),
+            ('farming', Category('Farming and Looting')),
+            ('gear', Category('Weapons and Gear')),
+            ('tools', Category('Tools and Misc')),
+            ('gamemodes', Category('Game Modes')),
+            ('overhaul', Category('Overhauls')),
+            ('qol', Category('Quality of Life')),
+            ('skins', Category('Visuals and Standalone Skins')),
+            ('cheats', Category('Cheat')),
+            ('wip', Category('Works in Progress')),
+            ('resources', Category('Modder\'s Resources')),
+            ('misc', Category('Miscellaneous')),
             ])
 
     def __init__(self):
@@ -904,14 +978,42 @@ class App(object):
         self.info_cache = FileCache(CabinetInfo, self.info_cache_filename)
         self.error_list = []
 
+        # Grab Jinja templates
+        jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader('templates'))
+        self.game_template = jinja_env.get_template('game.md')
+        self.cat_template = jinja_env.get_template('category.md')
+        self.mod_template = jinja_env.get_template('mod.md')
+
     def run(self):
         """
         Run the app
         """
 
+        # Keep track of which categories we've seen
+        seen_cats = {}
+        for game in self.games:
+            seen_cats[game.abbreviation] = {}
+
+        # Set up a reserved pages list
+        reserved_pages = set()
+
+        # Anything in our static_pages dir should be reserved
+        static_pages = {}
+        for filename in os.listdir('static_pages'):
+            full_filename = os.path.join('static_pages', filename)
+            reserved_pages.add(filename)
+            with open(full_filename) as df:
+                static_pages[filename] = df.read()
+
+        # Add all game/category pages to our reserved_pages list
+        for game in self.games:
+            reserved_pages.add(wiki_filename(game.title))
+            for cat in self.categories.values():
+                reserved_pages.add(cat.wiki_filename(game))
+
         # Loop through our game dirs
-        for (game_prefix, game_name) in self.games.items():
-            game_dir = os.path.join(self.repo_dir, game_name)
+        for game in self.games:
+            game_dir = os.path.join(self.repo_dir, game.dir_name)
             for (dirpath, dirnames, filenames) in os.walk(game_dir):
 
                 # Make a mapping of files by lower-case, so that we can
@@ -973,9 +1075,40 @@ class App(object):
 
                         # Set our categories (if we'd read from cache, they may have changed)
                         processed_file.set_categories(cabinet_info_mod.categories)
+                        for cat in cabinet_info_mod.categories:
+                            if cat not in seen_cats[game.abbreviation]:
+                                seen_cats[game.abbreviation][cat] = []
+                            seen_cats[game.abbreviation][cat].append(processed_file)
 
                         # Set our URLs (likewise, if from cache then they may have changed)
                         processed_file.set_urls(cabinet_info_mod.urls)
+
+        # Some console reporting, for interactive testing.
+        if False:
+            for mod in self.mod_cache.values():
+                if mod.status == Cacheable.S_NEW or mod.status == Cacheable.S_UPDATED:
+                    print('{} ({})'.format(mod.rel_filename, Cacheable.S_ENG[mod.status]))
+                    print(mod.mod_title)
+                    print(mod.mod_author)
+                    print(mod.mod_time)
+                    print(mod.mod_desc)
+                    print(mod.readme_desc)
+                    print('Categories: {}'.format(mod.categories))
+                    if mod.nexus_link:
+                        print('Nexus Link: {}'.format(mod.nexus_link))
+                    if len(mod.screenshots) > 0:
+                        print('Screenshots:')
+                        for ss in mod.screenshots:
+                            print(' * {}'.format(ss))
+                    print('--')
+
+            # Report on any errors
+            if len(self.error_list) > 0:
+                print('Errors encountered during run:')
+                for e in self.error_list:
+                    print(' * {}'.format(e))
+            else:
+                print('No errors encountered during run.')
 
         # Find any deleted mods.
         to_delete = []
@@ -986,32 +1119,81 @@ class App(object):
         for filename in to_delete:
             del self.mod_cache[filename]
 
-        for mod in self.mod_cache.values():
-            if mod.status == Cacheable.S_NEW or mod.status == Cacheable.S_UPDATED:
-                print('{} ({})'.format(mod.rel_filename, Cacheable.S_ENG[mod.status]))
-                print(mod.mod_title)
-                print(mod.mod_author)
-                print(mod.mod_time)
-                print(mod.mod_desc)
-                print(mod.readme_desc)
-                print('Categories: {}'.format(mod.categories))
-                if mod.nexus_link:
-                    print('Nexus Link: {}'.format(mod.nexus_link))
-                if len(mod.screenshots) > 0:
-                    print('Screenshots:')
-                    for ss in mod.screenshots:
-                        print(' * {}'.format(ss))
-                print('--')
+        # Get a list of files currently in the wiki
+        wiki_files = set()
+        for filename in os.listdir(self.cabinet_dir):
+            if os.path.isfile(os.path.join(self.cabinet_dir, filename)):
+                wiki_files.add(filename)
 
-        # Report on any errors
-        if len(self.error_list) > 0:
-            print('Errors encountered during run:')
-            for e in self.error_list:
-                print(' * {}'.format(e))
-        else:
-            print('No errors encountered during run.')
+        # Write out updated static pages, if need be
+        for (filename, content) in static_pages.items():
+            self.write_wiki_file(wiki_files,
+                    filename,
+                    os.path.join(self.cabinet_dir, filename),
+                    content,
+                    )
+
+        # Write out game and category pages
+        for game in self.games:
+            game_cats = []
+            for (cat_key, cat) in self.categories.items():
+                if cat_key in seen_cats[game.abbreviation]:
+                    game_cats.append(cat)
+
+                    # Write out the category page
+                    content = self.cat_template.render({
+                        'game': game,
+                        'cat': cat,
+                        'mods': sorted(seen_cats[game.abbreviation][cat_key])
+                        })
+                    cat_filename = cat.wiki_filename(game)
+                    self.write_wiki_file(wiki_files,
+                            cat_filename,
+                            os.path.join(self.cabinet_dir, cat_filename),
+                            content,
+                            )
+
+            # Write out the game page, linking to all categories which have mods
+            content = self.game_template.render({
+                'game': game,
+                'categories': [c.wiki_link(game) for c in game_cats],
+                })
+            game_filename = wiki_filename(game.title)
+            self.write_wiki_file(wiki_files,
+                    game_filename,
+                    os.path.join(self.cabinet_dir, game_filename),
+                    content,
+                    )
+
+        # Write out our individual mods
+        for mod in self.mod_cache.values():
+            mod_filename = mod.wiki_filename()
+            if mod.status != ModFile.S_CACHED or mod_filename not in wiki_files:
+                content = self.mod_template.render({
+                    'mod': mod,
+                    })
+                full_filename = os.path.join(self.cabinet_dir, mod.wiki_filename())
+                with open(full_filename, 'w') as df:
+                    df.write(content)
 
         # Write out our mod cache
         self.mod_cache.save()
         self.readme_cache.save()
         self.info_cache.save()
+
+    def write_wiki_file(self, wiki_files, filename, full_filename, content):
+        """
+        Write out a file to the wiki, so long as the content has changed
+        """
+        # TODO: is this method, um, dumb?  It's only used on staticish pages, so
+        # we should maybe just write indiscriminately.  Or maybe use a FileCache?
+        do_write = True
+        if filename in wiki_files:
+            with open(full_filename) as df:
+                cur_content = df.read()
+                if cur_content == content:
+                    do_write = False
+        if do_write:
+            with open(full_filename, 'w') as df:
+                df.write(content)
+
