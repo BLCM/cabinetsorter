@@ -214,7 +214,7 @@ class ModFile(Cacheable):
 
     cache_key = 'mods'
 
-    def __init__(self, mtime, dirinfo=None, filename=None, initial_status=Cacheable.S_UNKNOWN):
+    def __init__(self, mtime, dirinfo=None, filename=None, initial_status=Cacheable.S_UNKNOWN, game=None):
         super().__init__(mtime, initial_status)
         self.mod_time = datetime.datetime.fromtimestamp(mtime)
         self.mod_title = None
@@ -225,6 +225,7 @@ class ModFile(Cacheable):
         self.urls = []
         self.categories = set()
         self.re = Re()
+        self.game = game.abbreviation
 
         if dirinfo:
             # This is when we're actually loading from a file
@@ -270,6 +271,7 @@ class ModFile(Cacheable):
                 'n': self.nexus_link,
                 's': self.screenshots,
                 'c': list(self.categories),
+                'g': self.game,
                 }
 
     def _unserialize(self, input_dict):
@@ -286,6 +288,7 @@ class ModFile(Cacheable):
         self.nexus_link = input_dict['n']
         self.screenshots = input_dict['s']
         self.categories = set(input_dict['c'])
+        self.game = input_dict['g']
 
     def set_categories(self, categories):
         """
@@ -457,6 +460,17 @@ class ModFile(Cacheable):
         construct a full link to the mod.
         """
         return urllib.parse.quote(self.rel_filename)
+
+    def get_cat_links(self, categories):
+        """
+        Convenience function for wiki page - generates a set of links
+        to category pages which this mod belongs in.
+        """
+        return ', '.join([
+            c.wiki_link_abbrev(self.game) for c in [
+                categories[catname] for catname in self.categories
+                ]
+            ])
 
 class Readme(Cacheable):
     """
@@ -931,6 +945,10 @@ class Category(object):
         global wiki_link
         return wiki_link(self.title, '{} {}'.format(game.abbreviation, self.title))
 
+    def wiki_link_abbrev(self, game_abbrev):
+        global wiki_link
+        return wiki_link(self.title, '{} {}'.format(game_abbrev, self.title))
+
 class Game(object):
     """
     Class to hold a bit of info about a game.  Basically just a
@@ -955,10 +973,10 @@ class App(object):
     base_url = 'https://github.com/BLCM/BLCMods/tree/master/'
     dl_base_url = 'https://raw.githubusercontent.com/BLCM/BLCMods/master/'
     repo_dir = '/home/pez/git/b2patching/BLCMods.direct'
-    games = [
-            Game('BL2', 'Borderlands 2 mods', 'Borderlands 2'),
-            Game('TPS', 'Pre Sequel Mods', 'Pre-Sequel'),
-            ]
+    games = {
+            'BL2': Game('BL2', 'Borderlands 2 mods', 'Borderlands 2'),
+            'TPS': Game('TPS', 'Pre Sequel Mods', 'Pre-Sequel'),
+            }
     cabinet_dir = '/home/pez/git/b2patching/ModSorted.wiki'
     cache_filename = 'cache/modcache.json.xz'
     readme_cache_filename = 'cache/readmecache.json.xz'
@@ -1001,7 +1019,7 @@ class App(object):
 
         # Keep track of which categories we've seen
         seen_cats = {}
-        for game in self.games:
+        for game in self.games.values():
             seen_cats[game.abbreviation] = {}
 
         # Set up a reserved pages list
@@ -1016,13 +1034,13 @@ class App(object):
                 static_pages[filename] = df.read()
 
         # Add all game/category pages to our reserved_pages list
-        for game in self.games:
+        for game in self.games.values():
             reserved_pages.add(wiki_filename(game.title))
             for cat in self.categories.values():
                 reserved_pages.add(cat.wiki_filename(game))
 
         # Loop through our game dirs
-        for game in self.games:
+        for game in self.games.values():
             game_dir = os.path.join(self.repo_dir, game.dir_name)
             for (dirpath, dirnames, filenames) in os.walk(game_dir):
 
@@ -1054,24 +1072,24 @@ class App(object):
                         # Scan for which file to use -- just a single mod file in
                         # this dir.  First look for .blcm files.
                         for blcm_file in dirinfo.get_all_with_ext('blcm'):
-                            processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, blcm_file)))
+                            processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, blcm_file, game=game)))
                             # We're just going to always take the very first .blcm file we find
                             break
                         if len(processed_files) == 0:
                             for txt_file in dirinfo.get_all_with_ext('txt'):
                                 if 'readme' not in txt_file.lower():
-                                    processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, txt_file)))
+                                    processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, txt_file, game=game)))
                                     # Again, just grab the first one
                                     break
                         if len(processed_files) == 0:
                             for random_file in dirinfo.get_all():
                                 if 'readme' not in random_file.lower():
-                                    processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, random_file)))
+                                    processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, random_file, game=game)))
                                     # Again, just grab the first one
                                     break
                     else:
                         for cabinet_info_mod in cabinet_info.modlist():
-                            processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, cabinet_info_mod.filename)))
+                            processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, cabinet_info_mod.filename, game=game)))
 
                     # Do Stuff with each file we got
                     for (cabinet_info_mod, processed_file) in processed_files:
@@ -1144,7 +1162,7 @@ class App(object):
                     )
 
         # Write out game and category pages
-        for game in self.games:
+        for game in self.games.values():
             game_cats = []
             for (cat_key, cat) in self.categories.items():
                 if cat_key in seen_cats[game.abbreviation]:
@@ -1183,6 +1201,7 @@ class App(object):
                     'mod': mod,
                     'base_url': self.base_url,
                     'dl_base_url': self.dl_base_url,
+                    'cats': self.categories,
                     })
                 full_filename = os.path.join(self.cabinet_dir, mod.wiki_filename())
                 with open(full_filename, 'w') as df:

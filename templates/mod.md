@@ -1,9 +1,12 @@
 # {{ mod.mod_title }}
 
 **Author:** {{ mod.mod_author }}
+
 **Last Updated:** {{ mod.mod_time }}
 
-# Download Methods
+**In Categories:** {{ mod.get_cat_links(cats) }}
+
+## Download Methods
 
 | Site | Notes |
 | ---- | ----- |
@@ -21,6 +24,13 @@
 {% if mod.readme_desc|length > 0 %}
 ## README
 {{ mod.readme_desc|join("\n") }}
+{% endif %}
+
+{% if mod.screenshots|length > 0 %}
+## Screenshots
+{% for ss in mod.screenshots %}
+* {{ ss }}
+{% endfor %}
 {% endif %}
 
 ## Disclaimer
