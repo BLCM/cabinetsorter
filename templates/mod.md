@@ -33,8 +33,3 @@
 {% endfor %}
 {% endif %}
 
-## Disclaimer
-
-ModCabinet is auto-generated based on information found in the BLCM Github.  Information
-here could be wrong in various ways - if you see a problem, please talk to us at blah blah
-blah.
