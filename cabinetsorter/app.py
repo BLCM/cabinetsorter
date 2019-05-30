@@ -980,10 +980,10 @@ class App(object):
     base_url = 'https://github.com/BLCM/BLCMods/tree/master/'
     dl_base_url = 'https://raw.githubusercontent.com/BLCM/BLCMods/master/'
     repo_dir = '/home/pez/git/b2patching/BLCMods.direct'
-    games = {
-            'BL2': Game('BL2', 'Borderlands 2 mods', 'Borderlands 2'),
-            'TPS': Game('TPS', 'Pre Sequel Mods', 'Pre-Sequel'),
-            }
+    games = collections.OrderedDict([
+            ('BL2', Game('BL2', 'Borderlands 2 mods', 'Borderlands 2')),
+            ('TPS', Game('TPS', 'Pre Sequel Mods', 'Pre-Sequel')),
+            ])
     cabinet_dir = '/home/pez/git/b2patching/ModSorted.wiki'
     cache_filename = 'cache/modcache.json.xz'
     readme_cache_filename = 'cache/readmecache.json.xz'
@@ -1019,6 +1019,7 @@ class App(object):
         self.cat_template = jinja_env.get_template('category.md')
         self.mod_template = jinja_env.get_template('mod.md')
         self.about_template = jinja_env.get_template('about.md')
+        self.sidebar_template = jinja_env.get_template('sidebar.md')
 
     def run(self):
         """
@@ -1032,8 +1033,9 @@ class App(object):
 
         # Set up a reserved and created pages set
         about_filename = 'About-ModCabinet-Wiki.md'
-        reserved_pages = set([about_filename])
-        created_pages = set([about_filename])
+        sidebar_filename = '_Sidebar.md'
+        reserved_pages = set([about_filename, sidebar_filename])
+        created_pages = set([about_filename, sidebar_filename])
 
         # Anything in our static_pages dir should be reserved
         static_pages = {}
@@ -1200,6 +1202,16 @@ class App(object):
                         'categories': [c.wiki_link(game) for c in game_cats],
                         })
                     )
+
+        # Write out sidebar
+        self.write_wiki_file(wiki_files,
+                sidebar_filename,
+                self.sidebar_template.render({
+                    'games': self.games.values(),
+                    'cats': self.categories,
+                    'seen_cats': seen_cats,
+                    })
+                )
 
         # Write out our individual mods
         for mod in self.mod_cache.values():
