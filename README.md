@@ -29,6 +29,8 @@ Requirements
 This is a Python 3 app.  It may work in Python 2 but no attempt has been
 made to find out.  Required modules (installable via `pip`, of course):
 
+- `gitpython`
+- `Jinja2`
 - `python-Levenshtein`
 - `coverage` (only to run coverage on the unit tests, for development
   purposes.  Not needed just to run.)

@@ -23,6 +23,7 @@
 
 import os
 import re
+import git
 import json
 import lzma
 import jinja2
@@ -1033,7 +1034,7 @@ class App(object):
     # Dirs that we're looking into, and dirs that we're writing to
     base_url = 'https://github.com/BLCM/BLCMods/tree/master/'
     dl_base_url = 'https://raw.githubusercontent.com/BLCM/BLCMods/master/'
-    repo_dir = '/home/pez/git/b2patching/BLCMods.direct'
+    repo_dir = '/home/pez/git/b2patching/BLCMods.https'
     games = collections.OrderedDict([
             ('BL2', Game('BL2', 'Borderlands 2 mods', 'Borderlands 2')),
             ('TPS', Game('TPS', 'Pre Sequel Mods', 'Pre-Sequel')),
@@ -1107,6 +1108,10 @@ class App(object):
             reserved_pages.add(game.wiki_filename())
             for cat in self.categories.values():
                 reserved_pages.add(cat.wiki_filename(game))
+
+        # Pull down the latest repo
+        modsrepo = git.Repo(self.repo_dir)
+        modsrepo.git.pull()
 
         # Loop through our game dirs
         for game in self.games.values():
@@ -1220,9 +1225,13 @@ class App(object):
         for filename, mod in self.mod_cache.items():
             if not mod.seen:
                 to_delete.append(filename)
-                self.error_list.append('NOTICE: Deleting {} - {}'.format(mod.rel_filename, mod.mod_title))
         for filename in to_delete:
             del self.mod_cache[filename]
+
+        # Pull down the most recent wiki revision (nobody "should" be editing this
+        # manually, but I'm sure it'll happen eventually)
+        wikirepo = git.Repo(self.cabinet_dir)
+        wikirepo.git.pull()
 
         # Get a list of files currently in the wiki
         wiki_files = set()
@@ -1282,6 +1291,7 @@ class App(object):
         # Write out Author pages
         for author in self.author_cache.values():
             author_filename = author.wiki_filename()
+            created_pages.add(author_filename)
             if author.check_modlist() != Author.S_CACHED or author_filename not in wiki_files:
                 full_author = os.path.join(self.cabinet_dir, author_filename)
                 with open(full_author, 'w') as df:
@@ -1320,6 +1330,19 @@ class App(object):
             df.write(content)
 
         # TODO: Gotta delete pages which no longer exist (well, and also git integration)
+        for filename in wiki_files:
+            if filename not in created_pages:
+                wikirepo.git.rm(filename)
+
+        # Mark any new files as to-be-added
+        for filename in wikirepo.untracked_files:
+            wikirepo.git.add(filename)
+
+        # Commit all wiki changes and push, if we need to (which we should, since About
+        # always gets updated)
+        if wikirepo.is_dirty():
+            wikirepo.git.commit('-a', '-m', 'Auto-update from cabinetsorter')
+            wikirepo.git.push()
 
         # Write out our mod cache
         self.mod_cache.save()
