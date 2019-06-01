@@ -35,6 +35,32 @@ made to find out.  Required modules (installable via `pip`, of course):
 - `coverage` (only to run coverage on the unit tests, for development
   purposes.  Not needed just to run.)
 
+TODO
+----
+
+- Make sure author pages respect `reserved_pages` and `created_pages`
+- Improve download buttons/links - I don't really like how they look
+  at the moment.  Maybe even use images?
+- Regenerate mod/author pages if the template mtime has changed (the
+  other templated pages will already do that)
+- Handle duplicate mod names; if it's duplicate between BL2 and TPS,
+  I'd propose having the TPS one have a "TPS" prefix, but it's also
+  not out of the realm of possibility that we may have a duplicate
+  within a single game, too...  Perhaps don't worry about *that*
+  possibility unless it turns out to be a problem.  Right now the
+  second mod will just generate an error and not get a page.
+- Flag to not do git integration
+- Pull some of the config stuff out to a config file
+- Solidify category list
+  - Support subcategories?
+- Better screenshot support
+  - Understand links to single image vs. album, inline the single
+    images (would have to be some regexes per image provider, but
+    that should be fine)
+- Understand and embed youtube links
+- README/Mod Description parsing could probably use some tweaking,
+  but will have to do that carefully, of course.
+
 License
 -------
 
