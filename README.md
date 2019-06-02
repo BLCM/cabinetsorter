@@ -38,7 +38,6 @@ made to find out.  Required modules (installable via `pip`, of course):
 TODO
 ----
 
-- Make sure author pages respect `reserved_pages` and `created_pages`
 - Improve download buttons/links - I don't really like how they look
   at the moment.  Maybe even use images?
 - Regenerate mod/author pages if the template mtime has changed (the

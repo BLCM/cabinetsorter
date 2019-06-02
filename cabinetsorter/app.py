@@ -1291,14 +1291,19 @@ class App(object):
         # Write out Author pages
         for author in self.author_cache.values():
             author_filename = author.wiki_filename()
-            created_pages.add(author_filename)
-            if author.check_modlist() != Author.S_CACHED or author_filename not in wiki_files:
-                full_author = os.path.join(self.cabinet_dir, author_filename)
-                with open(full_author, 'w') as df:
-                    df.write(self.author_template.render({
-                        'author': author,
-                        'games': self.games,
-                        }))
+            if author_filename in reserved_pages:
+                self.error_list.append('ERROR: Author {} uses a reserved name'.format(author_filename))
+            elif author_filename in created_pages:
+                self.error_list.append('ERROR: Author {} has the same name as an already-created mod'.format(author_filename))
+            else:
+                created_pages.add(author_filename)
+                if author.check_modlist() != Author.S_CACHED or author_filename not in wiki_files:
+                    full_author = os.path.join(self.cabinet_dir, author_filename)
+                    with open(full_author, 'w') as df:
+                        df.write(self.author_template.render({
+                            'author': author,
+                            'games': self.games,
+                            }))
 
         # Write out our individual mods
         for mod in self.mod_cache.values():
