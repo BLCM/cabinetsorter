@@ -211,6 +211,24 @@ class Cacheable(object):
         """
         raise Exception('Not implemented')
 
+class TemplateMTime(Cacheable):
+    """
+    Info about a template's mtime, so we can regen if need be.  This is
+    basically the bare minimum-implementable Cacheable - literally all
+    we care about is the mtime.
+    """
+
+    cache_key = 'template'
+
+    def __init__(self, mtime, dirinfo=None, filename=None, initial_status=Cacheable.S_UNKNOWN):
+        super().__init__(mtime, initial_status)
+
+    def _serialize(self):
+        return {}
+
+    def _unserialize(self, input_dict):
+        pass
+
 class Author(Cacheable):
     """
     Info about a mod author.
@@ -1044,6 +1062,7 @@ class App(object):
     readme_cache_filename = 'cache/readmecache.json.xz'
     info_cache_filename = 'cache/infocache.json.xz'
     author_cache_filename = 'cache/authorcache.json.xz'
+    templatemtime_cache_filename = 'cache/templatemtime.json.xz'
 
     categories = collections.OrderedDict([
             ('general', Category('General Gameplay and Balance')),
@@ -1068,6 +1087,7 @@ class App(object):
         self.readme_cache = FileCache(Readme, self.readme_cache_filename)
         self.info_cache = FileCache(CabinetInfo, self.info_cache_filename)
         self.author_cache = FileCache(Author, self.author_cache_filename)
+        self.templatemtime_cache = FileCache(TemplateMTime, self.templatemtime_cache_filename)
         self.error_list = []
 
         # Grab Jinja templates
@@ -1078,6 +1098,16 @@ class App(object):
         self.about_template = jinja_env.get_template('about.md')
         self.sidebar_template = jinja_env.get_template('sidebar.md')
         self.author_template = jinja_env.get_template('author.md')
+
+        # Initialize templatemtime_cache.  We don't have to do this for
+        # most of our templates because they get generated every time,
+        # but we want it for mods and authors since those otherwise only
+        # get generated if other caches have noticed changes.  We're fudging
+        # some DirInfo stuff a bit, since that class is built with a BLCM
+        # repo in mind.
+        temp_info = DirInfo('', 'templates', ['mod.md', 'author.md'])
+        self.mod_template_mtime = self.templatemtime_cache.load(temp_info, 'mod.md')
+        self.author_template_mtime = self.templatemtime_cache.load(temp_info, 'author.md')
 
     def run(self):
         """
@@ -1297,7 +1327,9 @@ class App(object):
                 self.error_list.append('ERROR: Author {} has the same name as an already-created mod'.format(author_filename))
             else:
                 created_pages.add(author_filename)
-                if author.check_modlist() != Author.S_CACHED or author_filename not in wiki_files:
+                if (self.author_template_mtime.status != TemplateMTime.S_CACHED
+                        or author.check_modlist() != Author.S_CACHED
+                        or author_filename not in wiki_files):
                     full_author = os.path.join(self.cabinet_dir, author_filename)
                     with open(full_author, 'w') as df:
                         df.write(self.author_template.render({
@@ -1314,7 +1346,9 @@ class App(object):
                 self.error_list.append('ERROR: {} has the same name as an already-created mod'.format(mod.rel_filename))
             else:
                 created_pages.add(mod_filename)
-                if mod.status != ModFile.S_CACHED or mod_filename not in wiki_files:
+                if (self.mod_template_mtime.status != TemplateMTime.S_CACHED
+                        or mod.status != ModFile.S_CACHED
+                        or mod_filename not in wiki_files):
                     content = self.mod_template.render({
                         'mod': mod,
                         'base_url': self.base_url,
@@ -1354,6 +1388,7 @@ class App(object):
         self.readme_cache.save()
         self.info_cache.save()
         self.author_cache.save()
+        self.templatemtime_cache.save()
 
     def write_wiki_file(self, wiki_files, filename, content):
         """
