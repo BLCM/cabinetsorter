@@ -21,33 +21,22 @@
 # along with Borderlands ModCabinet Sorter.  If not, see
 # <https://www.gnu.org/licenses/>.
 
-from cabinetsorter.app import App
-
-# TODO: Loop through the git checkout dir and manually assign timestamps based
-# on the most recent git commit, since otherwise timestamps are based on when
-# they were pulled in to the local filesystem.  Will have to be careful about
-# that in the future.  Once this is in a position of running every N minutes
-# or whatever, I don't think we'd have to worry about bothering to re-sync
-# things after the fact, but we'll need the initial run.  To get the most
-# recent commit timestamp from a file, in a format that `touch` recognizes:
-#
-#    git log -n 1 --format='%cI' filename
-#
-# To set the timestamp, of course:
-#
-#    touch -d (date) filename
-#
-# Or, all at once:
-#
-#    touch -d "$(git log -n 1 --format='%cI' filename)" filename
-
 import argparse
+from cabinetsorter.app import App
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
             description='BLCM ModCabinet Auto-Sorter',
             #formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            epilog="""Use the -g/--no-git or -c/--no-commit options to avoid
+                git integration, which can be quite useful when you're
+                iterating through code/template changes but probably not of
+                much use otherwise.  The -i/--initial argument will also do an
+                initial "first-time-run" task of looping through the github
+                repo setting all file mtimes to be equal to their most-
+                recently-updated timestamp in the git tree.
+                """
             )
 
     parser.add_argument('-g', '--no-git',
@@ -62,7 +51,16 @@ if __name__ == '__main__':
             help='Don\'t do any git commit actions after processing.',
             )
 
+    parser.add_argument('-i', '--initial',
+            dest='do_initial_tasks',
+            action='store_true',
+            help='Do some first-time-run initial tasks to get the github repo dir ready',
+            )
+
     args = parser.parse_args()
 
     app = App()
-    app.run(args.do_git, args.do_git_commit)
+    app.run(
+            do_git=args.do_git,
+            do_git_commit=args.do_git_commit,
+            do_initial_tasks=args.do_initial_tasks)

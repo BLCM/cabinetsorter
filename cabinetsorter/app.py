@@ -1109,10 +1109,14 @@ class App(object):
         self.mod_template_mtime = self.templatemtime_cache.load(temp_info, 'mod.md')
         self.author_template_mtime = self.templatemtime_cache.load(temp_info, 'author.md')
 
-    def run(self, do_git, do_git_commit):
+    def run(self, do_git=True, do_git_commit=True, do_initial_tasks=False):
         """
         Run the app
         """
+
+        # If we've been told to do initial tasks, do those first
+        if do_initial_tasks:
+            self.do_initial_tasks()
 
         # Keep track of which categories we've seen
         seen_cats = {}
@@ -1412,3 +1416,23 @@ class App(object):
             with open(full_filename, 'w') as df:
                 df.write(content)
 
+    def do_initial_tasks(self):
+        """
+        Initial first-time-run tasks which need to happen.  Namely: update
+        all the file mtimes in the git repo checkout to match their git-tree
+        mtimes.  This is something which we could also just do as we loop
+        through the repo, instead, but I don't really care enough to figure
+        out how to use the more-efficient low-level gitpython functions to
+        do the lookups, as opposed to the higher-level API that we're using.
+        """
+
+        repo = git.Repo(self.repo_dir)
+        for (dirpath, dirnames, filenames) in os.walk(self.repo_dir):
+            if '.git' not in dirpath:
+                for filename in filenames:
+                    full_filename = os.path.join(dirpath, filename)
+                    try:
+                        git_mtime = int(repo.git.log('-n', '1', '--format=%ct', full_filename))
+                        os.utime(full_filename, (git_mtime, git_mtime))
+                    except ValueError as e:
+                        print('ERROR: Invalid mtime returned for {}'.format(full_filename))
