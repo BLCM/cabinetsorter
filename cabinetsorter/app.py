@@ -1109,7 +1109,7 @@ class App(object):
         self.mod_template_mtime = self.templatemtime_cache.load(temp_info, 'mod.md')
         self.author_template_mtime = self.templatemtime_cache.load(temp_info, 'author.md')
 
-    def run(self):
+    def run(self, do_git, do_git_commit):
         """
         Run the app
         """
@@ -1140,8 +1140,9 @@ class App(object):
                 reserved_pages.add(cat.wiki_filename(game))
 
         # Pull down the latest repo
-        modsrepo = git.Repo(self.repo_dir)
-        modsrepo.git.pull()
+        if do_git:
+            modsrepo = git.Repo(self.repo_dir)
+            modsrepo.git.pull()
 
         # Loop through our game dirs
         for game in self.games.values():
@@ -1260,8 +1261,9 @@ class App(object):
 
         # Pull down the most recent wiki revision (nobody "should" be editing this
         # manually, but I'm sure it'll happen eventually)
-        wikirepo = git.Repo(self.cabinet_dir)
-        wikirepo.git.pull()
+        if do_git:
+            wikirepo = git.Repo(self.cabinet_dir)
+            wikirepo.git.pull()
 
         # Get a list of files currently in the wiki
         wiki_files = set()
@@ -1368,20 +1370,23 @@ class App(object):
                 })
             df.write(content)
 
-        # TODO: Gotta delete pages which no longer exist (well, and also git integration)
-        for filename in wiki_files:
-            if filename not in created_pages:
-                wikirepo.git.rm(filename)
+        # Commit-related git actions
+        if do_git and do_git_commit:
 
-        # Mark any new files as to-be-added
-        for filename in wikirepo.untracked_files:
-            wikirepo.git.add(filename)
+            # Delete pages which no longer exist
+            for filename in wiki_files:
+                if filename not in created_pages:
+                    wikirepo.git.rm(filename)
 
-        # Commit all wiki changes and push, if we need to (which we should, since About
-        # always gets updated)
-        if wikirepo.is_dirty():
-            wikirepo.git.commit('-a', '-m', 'Auto-update from cabinetsorter')
-            wikirepo.git.push()
+            # Mark any new files as to-be-added
+            for filename in wikirepo.untracked_files:
+                wikirepo.git.add(filename)
+
+            # Commit all wiki changes and push, if we need to (which we should, since About
+            # always gets updated)
+            if wikirepo.is_dirty():
+                wikirepo.git.commit('-a', '-m', 'Auto-update from cabinetsorter')
+                wikirepo.git.push()
 
         # Write out our mod cache
         self.mod_cache.save()

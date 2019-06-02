@@ -46,7 +46,6 @@ TODO
   within a single game, too...  Perhaps don't worry about *that*
   possibility unless it turns out to be a problem.  Right now the
   second mod will just generate an error and not get a page.
-- Flag to not do git integration
 - Pull some of the config stuff out to a config file
 - Solidify category list
   - Support subcategories?

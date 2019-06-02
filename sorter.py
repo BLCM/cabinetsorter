@@ -41,6 +41,28 @@ from cabinetsorter.app import App
 #
 #    touch -d "$(git log -n 1 --format='%cI' filename)" filename
 
+import argparse
+
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(
+            description='BLCM ModCabinet Auto-Sorter',
+            #formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            )
+
+    parser.add_argument('-g', '--no-git',
+            dest='do_git',
+            action='store_false',
+            help='Don\'t interact with git in any way while running (implies --no-commit)',
+            )
+
+    parser.add_argument('-c', '--no-commit',
+            dest='do_git_commit',
+            action='store_false',
+            help='Don\'t do any git commit actions after processing.',
+            )
+
+    args = parser.parse_args()
+
     app = App()
-    app.run()
+    app.run(args.do_git, args.do_git_commit)
