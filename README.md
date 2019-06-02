@@ -56,6 +56,7 @@ TODO
 - Understand and embed youtube links
 - README/Mod Description parsing could probably use some tweaking,
   but will have to do that carefully, of course.
+- Proper logging
 
 License
 -------
