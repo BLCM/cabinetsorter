@@ -16,20 +16,55 @@
 | [Download from Nexus]({{ mod.nexus_link }}) | |
 {%- endif %}
 
-{% if mod.readme_desc|length > 0 %}
+{#- -------------------- README -------------------- #}
+
+{%- if mod.readme_desc|length > 0 %}
+
 ## README
+
 {{ mod.readme_desc|join("\n") }}
 {% endif %}
 
-{% if mod.mod_desc|length > 0 %}
+{#- -------------------- In-Mod Description -------------------- #}
+
+{%- if mod.mod_desc|length > 0 %}
+
 ## Description (from inside mod)
+
 {{ mod.mod_desc|join("\n") }}
 {% endif %}
 
-{% if mod.screenshots|length > 0 %}
-## Screenshots
-{% for ss in mod.screenshots %}
-* {{ ss }}
+{#- -------------------- Youtube Links -------------------- #}
+
+{%- if mod.youtube_urls|length > 0 %}
+
+## Youtube Videos
+
+{% for yt in mod.youtube_urls -%}
+- {{ yt }}
 {% endfor %}
-{% endif %}
+{%- endif %}
+
+{#- -------------------- Embedded Screenshots -------------------- #}
+
+{%- if mod.screenshots|length > 0 %}
+
+## Screenshots
+
+{% for ss in mod.screenshots -%}
+[![screenshot]({{ ss }})]({{ ss }})
+
+{% endfor %}
+{%- endif %}
+
+{#- -------------------- Other URLs -------------------- #}
+
+{%- if mod.urls|length > 0 %}
+
+## Other URLs
+
+{% for url in mod.urls -%}
+- {{ url }}
+{% endfor %}
+{%- endif %}
 

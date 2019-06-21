@@ -287,6 +287,7 @@ class ModFile(Cacheable):
         self.readme_desc = []
         self.nexus_link = None
         self.screenshots = []
+        self.youtube_urls = []
         self.urls = []
         self.categories = set()
         self.re = Re()
@@ -335,6 +336,8 @@ class ModFile(Cacheable):
                 'r': self.readme_desc,
                 'n': self.nexus_link,
                 's': self.screenshots,
+                'y': self.youtube_urls,
+                'u': self.urls,
                 'c': list(self.categories),
                 'g': self.game,
                 }
@@ -352,6 +355,8 @@ class ModFile(Cacheable):
         self.readme_desc = input_dict['r']
         self.nexus_link = input_dict['n']
         self.screenshots = input_dict['s']
+        self.youtube_urls = input_dict['y']
+        self.urls = input_dict['u']
         self.categories = set(input_dict['c'])
         self.game = input_dict['g']
 
@@ -375,16 +380,29 @@ class ModFile(Cacheable):
         self.seen = True
         nexus_link = None
         screenshots = []
+        youtube_urls = []
+        new_urls = []
         for url in urls:
-            if 'nexusmods.com' in url:
+            url_lower = url.lower()
+            if 'nexusmods.com' in url_lower:
                 nexus_link = url
-            else:
+            elif 'youtube.com' in url_lower or 'youtu.be' in url_lower:
+                youtube_urls.append(url)
+            elif url_lower.endswith('.jpg') or url_lower.endswith('.png') or url_lower.endswith('.gif'):
                 screenshots.append(url)
-        if (self.status != Cacheable.S_NEW and
-                (nexus_link != self.nexus_link or screenshots != self.screenshots)):
+            else:
+                new_urls.append(url)
+        if (self.status != Cacheable.S_NEW
+                and (nexus_link != self.nexus_link
+                    or screenshots != self.screenshots
+                    or youtube_urls != self.youtube_urls
+                    or new_urls != self.urls
+                    )):
             self.status = Cacheable.S_UPDATED
         self.screenshots = screenshots
         self.nexus_link = nexus_link
+        self.youtube_urls = youtube_urls
+        self.urls = new_urls
 
     def update_readme_desc(self, new_desc):
         """

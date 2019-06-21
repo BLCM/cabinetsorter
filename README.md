@@ -48,11 +48,6 @@ TODO
   second mod will just generate an error and not get a page.
 - Pull some of the config stuff out to a config file
 - Solidify category list
-- Better screenshot support
-  - Understand links to single image vs. album, inline the single
-    images (would have to be some regexes per image provider, but
-    that should be fine)
-- Understand and embed youtube links
 - README/Mod Description parsing could probably use some tweaking,
   but will have to do that carefully, of course.
 - Proper logging
