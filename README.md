@@ -48,7 +48,6 @@ TODO
   second mod will just generate an error and not get a page.
 - Pull some of the config stuff out to a config file
 - Solidify category list
-- Sort category list in sidebar properly
 - Better screenshot support
   - Understand links to single image vs. album, inline the single
     images (would have to be some regexes per image provider, but

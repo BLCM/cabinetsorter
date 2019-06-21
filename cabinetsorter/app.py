@@ -1294,8 +1294,10 @@ class App(object):
                     )
 
         # Write out game and category pages
+        multi_game_cats = {}
         for game in self.games.values():
             game_cats = []
+            multi_game_cats[game.abbreviation] = game_cats
             for (cat_key, cat) in self.categories.items():
                 if cat_key in seen_cats[game.abbreviation]:
                     game_cats.append(cat)
@@ -1330,7 +1332,7 @@ class App(object):
                 self.sidebar_template.render({
                     'games': self.games.values(),
                     'cats': self.categories,
-                    'seen_cats': seen_cats,
+                    'seen_cats': multi_game_cats,
                     })
                 )
 

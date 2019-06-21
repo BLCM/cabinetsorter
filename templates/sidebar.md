@@ -9,13 +9,13 @@
 **{{ game.title }} Mods**
 
 {%- for cat in seen_cats[game.abbreviation] %}
-{%- if cats[cat].prefix and (not loop.previtem or not cats[loop.previtem].prefix or (cats[loop.previtem].prefix != cats[cat].prefix)) %}
-- {{ cats[cat].prefix }}
+{%- if cat.prefix and (not loop.previtem or not loop.previtem.prefix or (loop.previtem.prefix != cat.prefix)) %}
+- {{ cat.prefix }}
 {%- endif %}
-{%- if cats[cat].prefix %}
-  - {{ cats[cat].wiki_link(game) }}
+{%- if cat.prefix %}
+  - {{ cat.wiki_link(game) }}
 {%- else %}
-- {{ cats[cat].wiki_link(game) }}
+- {{ cat.wiki_link(game) }}
 {%- endif %}
 {%- endfor %}
 
