@@ -1008,22 +1008,27 @@ class Category(object):
     """
 
     def __init__(self, title):
-        self.title = title
+        self.full_title = title
+        if ': ' in title:
+            (self.prefix, self.title) = title.split(': ', 1)
+        else:
+            self.prefix = None
+            self.title = title
 
     def wiki_filename(self, game):
         global wiki_filename
-        return wiki_filename('{} {}'.format(game.abbreviation, self.title))
+        return wiki_filename('{} {}'.format(game.abbreviation, self.full_title))
 
     def wiki_link(self, game):
         global wiki_link
-        return wiki_link(self.title, '{} {}'.format(game.abbreviation, self.title))
+        return wiki_link(self.title, '{} {}'.format(game.abbreviation, self.full_title))
 
     def wiki_link_abbrev(self, game_abbrev):
         global wiki_link
-        return wiki_link(self.title, '{} {}'.format(game_abbrev, self.title))
+        return wiki_link(self.title, '{} {}'.format(game_abbrev, self.full_title))
 
     def __lt__(self, other):
-        return self.title < other.title
+        return self.full_title < other.full_title
 
 class Game(object):
     """
@@ -1068,7 +1073,12 @@ class App(object):
             ('general', Category('General Gameplay and Balance')),
             ('skills', Category('Characters and Skills')),
             ('farming', Category('Farming and Looting')),
-            ('gear', Category('Weapons and Gear')),
+            ('gear-general', Category('Weapons/Gear: General')),
+            ('gear-brand', Category('Weapons/Gear: Brand Overhauls')),
+            ('gear-pack', Category('Weapons/Gear: Packs')),
+            ('gear-smg', Category('Weapons/Gear: SMGs')),
+            ('gear-pistol', Category('Weapons/Gear: Pistols')),
+            ('gear-shield', Category('Weapons/Gear: Shields')),
             ('tools', Category('Tools and Misc')),
             ('gamemodes', Category('Game Modes')),
             ('overhaul', Category('Overhauls')),
@@ -1310,7 +1320,7 @@ class App(object):
                     game_filename,
                     self.game_template.render({
                         'game': game,
-                        'categories': [c.wiki_link(game) for c in game_cats],
+                        'categories': game_cats,
                         })
                     )
 

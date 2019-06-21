@@ -1,4 +1,4 @@
-# {{ game.title }}: {{ cat.title }} Mods
+# {{ game.title }}: {{ cat.full_title }}
 
 {{ game.wiki_link_back() }}
 
