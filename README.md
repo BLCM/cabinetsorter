@@ -49,8 +49,6 @@ TODO
 - README/Mod Description parsing could probably use some tweaking,
   but will have to do that carefully, of course.
 - Proper logging
-- If README doesn't end in `.md`, use "pre" indent
-- Use "pre" indent for all in-mod description
 - Flag to only update if git has updated?
   - We don't want to run after *every* commit, because there could
     be a bunch all at once.  But maybe if we ran every couple of

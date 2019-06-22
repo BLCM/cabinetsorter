@@ -40,7 +40,7 @@
 
 ## README
 
-{{ mod.readme_desc|join("\n") }}
+{{ mod.get_readme_embed() }}
 
 [View whole README on Github]({{ base_url }}{{ mod.rel_readme_url() }})
 {%- endif %}
@@ -51,7 +51,7 @@
 
 ## Description (from inside mod)
 
-{{ mod.mod_desc|join("\n") }}
+{{ mod.get_mod_desc_embed() }}
 {% endif %}
 
 {#- -------------------- Youtube Links -------------------- #}

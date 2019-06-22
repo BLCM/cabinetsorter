@@ -651,6 +651,33 @@ class ModFile(Cacheable):
         """
         return urllib.parse.quote(self.readme_rel)
 
+    def is_readme_markdown(self):
+        """
+        Returns `True` if our README is markdown (or at least has a
+        `.md` extension)
+        """
+        if self.readme_rel:
+            return self.readme_rel.lower().endswith('.md')
+        return False
+
+    def get_readme_embed(self):
+        """
+        Returns an appropriately-formatted README for inclusion on
+        the page.  (If markdown, return it largely as-is, but if
+        plaintext, indent so that it's <pre>-formatted.)
+        """
+        if self.is_readme_markdown():
+            return "\n".join(self.readme_desc)
+        else:
+            return "\n".join(['    {}'.format(r) for r in self.readme_desc])
+
+    def get_mod_desc_embed(self):
+        """
+        Returns an appropriately-formatted in-mod description for inclusion
+        on the page.
+        """
+        return "\n".join(['    {}'.format(d) for d in self.mod_desc])
+
     def get_cat_links(self, categories):
         """
         Convenience function for wiki page - generates a set of links
@@ -1218,6 +1245,7 @@ class App(object):
             ('gear-brand', Category('Weapons/Gear: Brand Overhauls')),
             ('gear-pack', Category('Weapons/Gear: Packs')),
             ('gear-smg', Category('Weapons/Gear: SMGs')),
+            ('gear-com', Category('Weapons/Gear: COMs')),
             ('gear-pistol', Category('Weapons/Gear: Pistols')),
             ('gear-shield', Category('Weapons/Gear: Shields')),
             ('tools', Category('Tools and Misc')),
