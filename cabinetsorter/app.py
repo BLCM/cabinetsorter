@@ -1238,26 +1238,82 @@ class App(object):
     templatemtime_cache_filename = 'cache/templatemtime.json.xz'
 
     categories = collections.OrderedDict([
-            ('general', Category('General Gameplay and Balance')),
-            ('skills', Category('Characters and Skills')),
-            ('farming', Category('Farming and Looting')),
-            ('gear-general', Category('Weapons/Gear: General')),
-            ('gear-brand', Category('Weapons/Gear: Brand Overhauls')),
-            ('gear-pack', Category('Weapons/Gear: Packs')),
-            ('gear-smg', Category('Weapons/Gear: SMGs')),
-            ('gear-com', Category('Weapons/Gear: COMs')),
-            ('gear-pistol', Category('Weapons/Gear: Pistols')),
-            ('gear-shield', Category('Weapons/Gear: Shields')),
-            ('tools', Category('Tools and Misc')),
-            ('gamemodes', Category('Game Modes')),
-            ('overhaul', Category('Overhauls')),
-            ('qol', Category('Quality of Life')),
-            ('skins', Category('Visuals and Standalone Skins')),
-            ('cheats', Category('Cheat')),
-            ('wip', Category('Works in Progress')),
-            ('resources', Category('Modder\'s Resources')),
-            ('misc', Category('Miscellaneous')),
-            ])
+
+        # Major Modpacks
+        ('major-pack', Category('Major Overhauls and Mod Packs')),
+
+        # General Gameplay and Balance
+        ('mode-balance', Category('General Gameplay and Balance: Game Mode Balance')),
+        ('scaling', Category('General Gameplay and Balance: Scaling Changes')),
+        ('element', Category('General Gameplay and Balance: Elements and Damage Types')),
+        ('quest-changes', Category('General Gameplay and Balance: Quest Changes')),
+        ('currency', Category('General Gameplay and Balance: Currencies')),
+
+        # Characters and Skills
+        ('char-overhaul', Category('Characters and Skills: Full Character Overhauls')),
+        ('skill-system', Category('Characters and Skills: Skill System Changes')),
+        ('skill', Category('Characters and Skills: Individual Skill Changes')),
+        ('char-changes', Category('Characters and Skills: Other Character Changes')),
+
+        # Weapons/Gear
+        ('gear-general', Category('Weapons/Gear: General')),
+        ('gear-brand', Category('Weapons/Gear: Brand Overhauls')),
+        ('gear-pack', Category('Weapons/Gear: Packs')),
+        ('gear-ar', Category('Weapons/Gear: Assault Rifles')),
+        ('gear-laser', Category('Weapons/Gear: Lasers')),
+        ('gear-pistol', Category('Weapons/Gear: Pistols')),
+        ('gear-launcher', Category('Weapons/Gear: Rocket Launchers')),
+        ('gear-shotgun', Category('Weapons/Gear: Shotguns')),
+        ('gear-smg', Category('Weapons/Gear: SMGs')),
+        ('gear-sniper', Category('Weapons/Gear: Sniper Rifles')),
+        ('gear-grenade', Category('Weapons/Gear: Grenade Mods')),
+        ('gear-com', Category('Weapons/Gear: COMs')),
+        ('gear-shield', Category('Weapons/Gear: Shields')),
+        ('gear-relic', Category('Weapons/Gear: Relics')),
+        ('gear-ozkit', Category('Weapons/Gear: OZ Kits')),
+
+        # Farming and Looting
+        ('loot-system', Category('Farming and Looting: Loot System Overhauls')),
+        ('enemy-drops', Category('Farming and Looting: Enemy Drop Changes')),
+        ('chests', Category('Farming and Looting: Chest and Container Changes')),
+        ('vendor', Category('Farming and Looting: Vending Machines')),
+        ('slots', Category('Farming and Looting: Slot Machines')),
+        ('quest-rewards', Category('Farming and Looting: Quest Rewards')),
+        ('loot-sources', Category('Farming and Looting: Other Loot Sources')),
+
+        # Enemies
+        ('spawns', Category('Enemies: Enemy Spawns')),
+        ('enemy', Category('Enemies: Enemy Changes')),
+
+        # Maps and Public Transport
+        ('vehicle', Category('Maps and Public Transport: Vehicles')),
+        ('fast-travel', Category('Maps and Public Transport: Fast Travel')),
+        ('maps', Category('Maps and Public Transport: Map Alterations')),
+
+        # Audio and Visual
+        ('av', Category('Audio and Visual: General A/V Settings')),
+        ('particles', Category('Audio and Visual: Particles')),
+        ('ui', Category('Audio and Visual: UI Changes')),
+        ('av-gear', Category('Audio and Visual: Weapon and Gear Visuals')),
+        ('av-char', Category('Audio and Visual: Character Visuals')),
+        ('av-enemy', Category('Audio and Visual: Enemy Visuals')),
+        ('audio', Category('Audio and Visual: Audio Changes')),
+        ('text', Category('Audio and Visual: Text Changes')),
+
+        # Quality of Life
+        ('qol', Category('Quality of Life: General QoL')),
+        ('qol-ui', Category('Quality of Life: UI QoL Changes')),
+        ('qol-world', Category('Quality of Life: World Interactions')),
+        ('inventory', Category('Quality of Life: Inventory/Bank Changes')),
+
+        # Other
+        ('bugfix', Category('Other: Bugfixes')),
+        ('cheat', Category('Other: Cheat Mods')),
+        ('modpack', Category('Other: Mod Packs')),
+        ('joke', Category('Other: Joke Mods')),
+        ('resource', Category('Other: Resource Mods')),
+
+        ])
 
     def __init__(self):
 
@@ -1277,6 +1333,7 @@ class App(object):
         self.about_template = jinja_env.get_template('about.md')
         self.sidebar_template = jinja_env.get_template('sidebar.md')
         self.author_template = jinja_env.get_template('author.md')
+        self.contributing_template = jinja_env.get_template('contributing.md')
 
         # Initialize templatemtime_cache.  We don't have to do this for
         # most of our templates because they get generated every time,
@@ -1305,8 +1362,9 @@ class App(object):
         # Set up a reserved and created pages set
         about_filename = 'About-ModCabinet-Wiki.md'
         sidebar_filename = '_Sidebar.md'
-        reserved_pages = set([about_filename, sidebar_filename])
-        created_pages = set([about_filename, sidebar_filename])
+        contributing_filename = 'Contributing-to-ModCabinet.md'
+        reserved_pages = set([about_filename, sidebar_filename, contributing_filename])
+        created_pages = set([about_filename, sidebar_filename, contributing_filename])
 
         # Anything in our static_pages dir should be reserved
         static_pages = {}
@@ -1356,25 +1414,27 @@ class App(object):
                     # Loop through the mods described by cabinet.info and load them
                     processed_files = []
                     if cabinet_info.single_mod:
-                        cabinet_info_mod = cabinet_info.mods[None]
-                        # Scan for which file to use -- just a single mod file in
-                        # this dir.  First look for .blcm files.
-                        for blcm_file in dirinfo.get_all_with_ext('blcm'):
-                            processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, blcm_file, game=game.abbreviation)))
-                            # We're just going to always take the very first .blcm file we find
-                            break
-                        if len(processed_files) == 0:
-                            for txt_file in dirinfo.get_all_with_ext('txt'):
-                                if 'readme' not in txt_file.lower():
-                                    processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, txt_file, game=game.abbreviation)))
-                                    # Again, just grab the first one
-                                    break
-                        if len(processed_files) == 0:
-                            for random_file in dirinfo.get_all():
-                                if 'readme' not in random_file.lower():
-                                    processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, random_file, game=game.abbreviation)))
-                                    # Again, just grab the first one
-                                    break
+                        # Make sure that a valid category was found
+                        if None in cabinet_info.mods:
+                            cabinet_info_mod = cabinet_info.mods[None]
+                            # Scan for which file to use -- just a single mod file in
+                            # this dir.  First look for .blcm files.
+                            for blcm_file in dirinfo.get_all_with_ext('blcm'):
+                                processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, blcm_file, game=game.abbreviation)))
+                                # We're just going to always take the very first .blcm file we find
+                                break
+                            if len(processed_files) == 0:
+                                for txt_file in dirinfo.get_all_with_ext('txt'):
+                                    if 'readme' not in txt_file.lower():
+                                        processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, txt_file, game=game.abbreviation)))
+                                        # Again, just grab the first one
+                                        break
+                            if len(processed_files) == 0:
+                                for random_file in dirinfo.get_all():
+                                    if 'readme' not in random_file.lower():
+                                        processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, random_file, game=game.abbreviation)))
+                                        # Again, just grab the first one
+                                        break
                     else:
                         for cabinet_info_mod in cabinet_info.modlist():
                             processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, cabinet_info_mod.filename, game=game.abbreviation)))
@@ -1508,6 +1568,14 @@ class App(object):
                     'games': self.games.values(),
                     'cats': self.categories,
                     'seen_cats': multi_game_cats,
+                    })
+                )
+
+        # Write out 'contributing' page
+        self.write_wiki_file(wiki_files,
+                contributing_filename,
+                self.contributing_template.render({
+                    'categories': self.categories,
                     })
                 )
 

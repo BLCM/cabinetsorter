@@ -45,7 +45,6 @@ TODO
   possibility unless it turns out to be a problem.  Right now the
   second mod will just generate an error and not get a page.
 - Pull some of the config stuff out to a config file
-- Solidify category list
 - README/Mod Description parsing could probably use some tweaking,
   but will have to do that carefully, of course.
 - Proper logging

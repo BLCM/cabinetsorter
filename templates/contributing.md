@@ -7,7 +7,9 @@ current valid categories are:
 
 | Category Name | Description |
 | --- | --- |
-| *fill this in later once they're solidified* | |
+{%- for catname, cat in categories.items() %}
+| `{{ catname }}` | {{ cat.full_title }}
+{%- endfor %}
 
 ## Assigning Categories
 
