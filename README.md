@@ -49,7 +49,6 @@ TODO
 - README/Mod Description parsing could probably use some tweaking,
   but will have to do that carefully, of course.
 - Proper logging
-- Change to README path should update modfile object
 - If README doesn't end in `.md`, use "pre" indent
 - Use "pre" indent for all in-mod description
 - Flag to only update if git has updated?

@@ -494,13 +494,16 @@ class ModFile(Cacheable):
         Updates our README description with the given array
         """
         if readme:
-            self.readme_rel = readme.rel_filename
+            new_readme_rel = readme.rel_filename
         else:
-            self.readme_rel = None
+            new_readme_rel = None
         self.seen = True
-        if self.status != Cacheable.S_NEW and new_desc != self.readme_desc:
+        if (self.status != Cacheable.S_NEW and
+                (new_desc != self.readme_desc
+                    or new_readme_rel != self.readme_rel)):
             self.status = Cacheable.S_UPDATED
         self.readme_desc = new_desc
+        self.readme_rel = new_readme_rel
 
     def update_changelog(self, new_changelog):
         """
