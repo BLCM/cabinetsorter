@@ -272,6 +272,9 @@ class Author(Cacheable):
         global wiki_link
         return wiki_link(self.name, self.name)
 
+    def rel_url(self, game):
+        return urllib.parse.quote('{}/{}'.format(game.dir_name, self.name))
+
 class ModURL(object):
     """
     Real simple object to support 'annotated' URLs in cabinet.info files, so
@@ -1419,6 +1422,7 @@ class App(object):
                         df.write(self.author_template.render({
                             'author': author,
                             'games': self.games,
+                            'base_url': self.base_url,
                             }))
 
         # Write out our individual mods
