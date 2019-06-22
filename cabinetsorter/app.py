@@ -1225,7 +1225,7 @@ class App(object):
     # Dirs that we're looking into, and dirs that we're writing to
     base_url = 'https://github.com/BLCM/BLCMods/tree/master/'
     dl_base_url = 'https://raw.githubusercontent.com/BLCM/BLCMods/master/'
-    repo_dir = '/home/pez/git/b2patching/BLCMods.https'
+    repo_dir = '/home/pez/git/b2patching/BLCMods.cabinet'
     games = collections.OrderedDict([
             ('BL2', Game('BL2', 'Borderlands 2 mods', 'Borderlands 2')),
             ('TPS', Game('TPS', 'Pre Sequel Mods', 'Pre-Sequel')),
