@@ -58,6 +58,17 @@ Or a directory which has multiple mods might look like this:
     https://i.imgur.com/W5BHeOB.jpg
     DarlinV2.txt: gear
 
+You can also add in text labels for your URLs by prefixing them with some text
+and separating them with a pipe (`|`) character:
+
+    BastardV3.txt: gear
+    CatO'NineTails.txt: gear
+    A pic of the new weapon in action|https://i.imgur.com/W5BHeOB.jpg
+    DarlinV2.txt: gear
+
+If a URL ends in `.jpg`, `.gif`, or `.png`, it will be embedded into the
+cabinet page.  Youtube URLs will be displayed separately from other URLs.
+
 ## That's it!
 
 Just check in your `cabinet.info` file the exact same way you'd check in a mod

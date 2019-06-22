@@ -13,7 +13,7 @@
 | [Download from Github]({{ dl_base_url }}/{{ mod.rel_url() }}) | *(right click and choose "Save Link As")* |
 | [View on Github]({{ base_url }}/{{ mod.rel_url() }}) | *(right-click on "Raw" or "Download" button and choose "Save Link As" to download)* |
 {%- if mod.nexus_link %}
-| [Download from Nexus]({{ mod.nexus_link }}) | |
+| [Download from Nexus]({{ mod.nexus_link.url }}) | |
 {%- endif %}
 
 {#- -------------------- README -------------------- #}
@@ -41,7 +41,7 @@
 ## Youtube Videos
 
 {% for yt in mod.youtube_urls -%}
-- {{ yt }}
+- {{ yt.wiki_link() }}
 {% endfor %}
 {%- endif %}
 
@@ -52,7 +52,10 @@
 ## Screenshots
 
 {% for ss in mod.screenshots -%}
-[![screenshot]({{ ss }})]({{ ss }})
+{%- if ss.text %}
+{{ ss.text }}:
+{%- endif %}
+{{ ss.screenshot_embed() }}
 
 {% endfor %}
 {%- endif %}
@@ -64,7 +67,7 @@
 ## Other URLs
 
 {% for url in mod.urls -%}
-- {{ url }}
+- {{ url.wiki_link() }}
 {% endfor %}
 {%- endif %}
 

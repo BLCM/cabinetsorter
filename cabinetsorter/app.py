@@ -272,6 +272,47 @@ class Author(Cacheable):
         global wiki_link
         return wiki_link(self.name, self.name)
 
+class ModURL(object):
+    """
+    Real simple object to support 'annotated' URLs in cabinet.info files, so
+    users can attach text labels to their links, if they want.  Annotated
+    URLs are formatted like:
+
+        Text Label|http://url.com/
+
+    ie: a single pipe to separate the text label on the left from the URL
+    to the right.
+    """
+
+    def __init__(self, link_text):
+        if '|' in link_text:
+            (self.text, self.url) = link_text.split('|', 1)
+        else:
+            self.url = link_text
+            self.text = None
+
+    def wiki_link(self):
+        if self.text:
+            return '[{}]({})'.format(self.text, self.url)
+        else:
+            return self.url
+
+    def screenshot_embed(self, label='screenshot'):
+        if self.text:
+            label = self.text
+        return '[![{}]({})]({})'.format(
+                label, self.url, self.url,
+                )
+
+    def __str__(self):
+        if self.text:
+            return '{}|{}'.format(self.text, self.url)
+        else:
+            return self.url
+
+    def __eq__(self, other):
+        return self.url == other.url and self.text == other.text
+
 class ModFile(Cacheable):
     """
     Class to pull info out of a mod file.
@@ -326,6 +367,10 @@ class ModFile(Cacheable):
         """
         Returns a serializable dict describing ourselves
         """
+        if self.nexus_link:
+            nl = str(self.nexus_link)
+        else:
+            nl = None
         return {
                 'ff': self.full_filename,
                 'rp': self.rel_path,
@@ -334,10 +379,10 @@ class ModFile(Cacheable):
                 't': self.mod_title,
                 'd': self.mod_desc,
                 'r': self.readme_desc,
-                'n': self.nexus_link,
-                's': self.screenshots,
-                'y': self.youtube_urls,
-                'u': self.urls,
+                'n': nl,
+                's': [str(s) for s in self.screenshots],
+                'y': [str(y) for y in self.youtube_urls],
+                'u': [str(u) for u in self.urls],
                 'c': list(self.categories),
                 'g': self.game,
                 }
@@ -353,10 +398,13 @@ class ModFile(Cacheable):
         self.mod_title = input_dict['t']
         self.mod_desc = input_dict['d']
         self.readme_desc = input_dict['r']
-        self.nexus_link = input_dict['n']
-        self.screenshots = input_dict['s']
-        self.youtube_urls = input_dict['y']
-        self.urls = input_dict['u']
+        if input_dict['n']:
+            self.nexus_link = ModURL(input_dict['n'])
+        else:
+            self.nexus_link = None
+        self.screenshots = [ModURL(u) for u in input_dict['s']]
+        self.youtube_urls = [ModURL(u) for u in input_dict['y']]
+        self.urls = [ModURL(u) for u in input_dict['u']]
         self.categories = set(input_dict['c'])
         self.game = input_dict['g']
 
@@ -385,13 +433,13 @@ class ModFile(Cacheable):
         for url in urls:
             url_lower = url.lower()
             if 'nexusmods.com' in url_lower:
-                nexus_link = url
+                nexus_link = ModURL(url)
             elif 'youtube.com' in url_lower or 'youtu.be' in url_lower:
-                youtube_urls.append(url)
+                youtube_urls.append(ModURL(url))
             elif url_lower.endswith('.jpg') or url_lower.endswith('.png') or url_lower.endswith('.gif'):
-                screenshots.append(url)
+                screenshots.append(ModURL(url))
             else:
-                new_urls.append(url)
+                new_urls.append(ModURL(url))
         if (self.status != Cacheable.S_NEW
                 and (nexus_link != self.nexus_link
                     or screenshots != self.screenshots
@@ -908,7 +956,7 @@ class CabinetInfo(Cacheable):
         for line in df.readlines():
             if line.strip() == '' or line.startswith('#'):
                 pass
-            elif line.startswith('http://') or line.startswith('https://'):
+            elif line.startswith('http://') or line.startswith('https://') or '|http' in line:
                 if prev_modfile in self.mods:
                     self.mods[prev_modfile].add_url(line.strip())
                 else:
