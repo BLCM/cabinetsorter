@@ -26,6 +26,7 @@ import re
 import git
 import json
 import lzma
+import html
 import jinja2
 import urllib
 import datetime
@@ -236,6 +237,9 @@ class Author(Cacheable):
 
     cache_key = 'author'
 
+    regular_modlink_re = re.compile('^\[\[(.*?)\|.*\]\].*$')
+    html_modlink_re = re.compile('^<a href=.*?>(.*)</a>.*$')
+
     def __init__(self, mtime, initial_status=Cacheable.S_UNKNOWN, name=None):
         super().__init__(mtime, initial_status)
         self.name = name
@@ -275,6 +279,29 @@ class Author(Cacheable):
     def rel_url(self, game):
         return urllib.parse.quote('{}/{}'.format(game.dir_name, self.name))
 
+    def sort_modlist(self, modlist):
+        """
+        Convenience function to work around both some annoying github wiki markdown
+        link behavior, and my own pig-headedness.  We're rendering links to mod
+        pages with ampersands in the names as HTML but leaving all other links as
+        "pure" wiki links.  That means that those links no longer sort properly.
+        So...
+        """
+        return sorted(modlist, key=self._sort_modlist_key)
+
+    def _sort_modlist_key(self, modlist_link):
+        """
+        Key to use when sorting between two different wiki link syntaxes
+        """
+        ml_lower = modlist_link.lower()
+        match = Author.regular_modlink_re.match(ml_lower)
+        if match:
+            return match.group(1)
+        match = Author.html_modlink_re.match(ml_lower)
+        if match:
+            return match.group(1)
+        return ml_lower
+
 class ModURL(object):
     """
     Real simple object to support 'annotated' URLs in cabinet.info files, so
@@ -295,8 +322,9 @@ class ModURL(object):
             self.text = None
 
     def wiki_link(self):
+        global wiki_link
         if self.text:
-            return '[{}]({})'.format(self.text, self.url)
+            return wiki_link(self.text, self.url, external=True)
         else:
             return self.url
 
@@ -1092,10 +1120,22 @@ def wiki_link(text, link, external=False):
     if external:
         format_str = '[{}]({})'
     else:
+        # Putting ampersands in "pure" markdown links just doesn't work, at least
+        # when they're part of the wiki page name (see: Aaron0000's `S&S Forever`
+        # and `S&S Lite` mods, for instance).  This trick here is a bit cheap, but
+        # it's the only way I've found so far to link to these pages without
+        # having to hardcode a fullly-qualified URL, which I'd *really* rather
+        # not do.
+        if '&' in link:
+            return '<a href="{}">{}</a>'.format(
+                    html.escape(link.replace('/', ' ')),
+                    text,
+                    )
         format_str = '[[{}|{}]]'
+        link = link.replace('/', ' ')
     return format_str.format(
             text,
-            link.replace('/', ' '),
+            link,
             )
 
 class Category(object):
@@ -1449,8 +1489,11 @@ class App(object):
                 self.error_list.append('ERROR: Author {} has the same name as an already-created mod'.format(author_filename))
             else:
                 created_pages.add(author_filename)
-                if (self.author_template_mtime.status != TemplateMTime.S_CACHED
-                        or author.check_modlist() != Author.S_CACHED
+                # Make sure that author.check_modlist() gets called regardless of any
+                # other check, else author data won't get populated on the very first
+                # run.  (Subsequent runs *would* fix it, though...)
+                if (author.check_modlist() != Author.S_CACHED
+                        or self.author_template_mtime.status != TemplateMTime.S_CACHED
                         or author_filename not in wiki_files):
                     full_author = os.path.join(self.cabinet_dir, author_filename)
                     with open(full_author, 'w') as df:
