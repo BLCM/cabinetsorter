@@ -183,12 +183,23 @@ class Cacheable(object):
         self.mtime = mtime
         self.status = initial_status
 
+    def has_errors(self):
+        """
+        Reimplement this in the inheriting class if you want to be able to
+        pretend that the file's mtime is in the past, in the event of
+        errors.
+        """
+        return False
+
     def serialize(self):
         """
         Returns a serializable dict describing ourselves
         """
         d = self._serialize()
-        d['m'] = self.mtime
+        if self.has_errors():
+            d['m'] = 0
+        else:
+            d['m'] = self.mtime
         return d
 
     def _serialize(self): # pragma: nocover
@@ -992,9 +1003,16 @@ class CabinetInfo(Cacheable):
         self.valid_categories = None
         self.mods = {}
         self.single_mod = False
+        self.errors = False
         if rel_filename:
             full_filename = dirinfo[filename]
             self.load_from_filename(full_filename, rel_filename, error_list, valid_categories)
+
+    def has_errors(self):
+        """
+        Return whether or not we have errors
+        """
+        return self.errors
 
     def _serialize(self):
         """
@@ -1050,11 +1068,13 @@ class CabinetInfo(Cacheable):
                 if prev_modfile in self.mods:
                     self.mods[prev_modfile].add_url(line.strip())
                 else:
+                    self.errors = True
                     self.error_list.append('ERROR: Did not find previous modfile but got URL, in {}'.format(
                         self.rel_filename))
             else:
                 if ': ' in line:
                     if self.single_mod:
+                        self.errors = True
                         self.error_list.append('ERROR: Unknown line "{}" found in single-mod info file {}'.format(
                             line.strip(), self.rel_filename))
                     else:
@@ -1063,6 +1083,7 @@ class CabinetInfo(Cacheable):
                             prev_modfile = mod_filename
                 else:
                     if len(self.mods) > 0:
+                        self.errors = True
                         self.error_list.append('ERROR: Unknown line "{}" inside {}'.format(
                             line.strip(), self.rel_filename))
                     else:
@@ -1079,6 +1100,7 @@ class CabinetInfo(Cacheable):
 
         # First check to make sure we don't already have this mod
         if mod_name in self.mods:
+            self.errors = True
             self.error_list.append('ERROR: {} specified twice inside {}'.format(
                 mod_name, self.rel_filename))
             return False
@@ -1090,6 +1112,7 @@ class CabinetInfo(Cacheable):
             if cat in self.valid_categories:
                 real_cats.append(cat)
             else:
+                self.errors = True
                 self.error_list.append('WARNING: Invalid category "{}" in {}'.format(
                     cat, self.rel_filename,
                     ))
@@ -1103,6 +1126,7 @@ class CabinetInfo(Cacheable):
                 report = mod_name
             else:
                 report = 'the mod'
+            self.errors = True
             self.error_list.append('ERROR: No categories found for {} in {}'.format(report, self.rel_filename))
             return False
 
@@ -1270,7 +1294,7 @@ class App(object):
         ('gear-com', Category('Weapons/Gear: COMs')),
         ('gear-shield', Category('Weapons/Gear: Shields')),
         ('gear-relic', Category('Weapons/Gear: Relics')),
-        ('gear-ozkit', Category('Weapons/Gear: OZ Kits')),
+        ('gear-ozkit', Category('Weapons/Gear: Oz Kits')),
 
         # Farming and Looting
         ('loot-system', Category('Farming and Looting: Loot System Overhauls')),
