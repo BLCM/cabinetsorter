@@ -335,6 +335,7 @@ class ModFile(Cacheable):
         self.youtube_urls = []
         self.urls = []
         self.categories = set()
+        self.changelog = []
         self.re = Re()
         self.game = game
 
@@ -384,6 +385,7 @@ class ModFile(Cacheable):
                 'd': self.mod_desc,
                 'r': self.readme_desc,
                 'l': self.readme_rel,
+                'o': self.changelog,
                 'n': nl,
                 's': [str(s) for s in self.screenshots],
                 'y': [str(y) for y in self.youtube_urls],
@@ -404,6 +406,7 @@ class ModFile(Cacheable):
         self.mod_desc = input_dict['d']
         self.readme_desc = input_dict['r']
         self.readme_rel = input_dict['l']
+        self.changelog = input_dict['o']
         if input_dict['n']:
             self.nexus_link = ModURL(input_dict['n'])
         else:
@@ -470,6 +473,15 @@ class ModFile(Cacheable):
         if self.status != Cacheable.S_NEW and new_desc != self.readme_desc:
             self.status = Cacheable.S_UPDATED
         self.readme_desc = new_desc
+
+    def update_changelog(self, new_changelog):
+        """
+        Updates our changelog data with the given array
+        """
+        self.seen = True
+        if self.status != Cacheable.S_NEW and new_changelog != self.changelog:
+            self.status = Cacheable.S_UPDATED
+        self.changelog = new_changelog
 
     def load_blcmm(self, df):
         """
@@ -1302,9 +1314,15 @@ class App(object):
                         # See if we've got a "better" description in a readme
                         if readme:
                             readme_info = readme.find_matching(processed_file.mod_title, cabinet_info.single_mod)
+                            if cabinet_info.single_mod:
+                                changelog = readme.find_matching('changelog', False)
+                            else:
+                                changelog = []
                         else:
                             readme_info = []
+                            changelog = []
                         processed_file.update_readme_desc(readme, readme_info)
+                        processed_file.update_changelog(changelog)
 
                         # Set our categories (if we'd read from cache, they may have changed)
                         processed_file.set_categories(cabinet_info_mod.categories)

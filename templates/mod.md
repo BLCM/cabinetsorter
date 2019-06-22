@@ -91,3 +91,11 @@
 {% endfor %}
 {%- endif %}
 
+{#- -------------------- Changelog -------------------- #}
+
+{%- if mod.changelog|length > 0 %}
+
+## Changelog
+
+{{ mod.changelog|join("\n") }}
+{% endif %}
