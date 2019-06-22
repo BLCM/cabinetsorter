@@ -328,6 +328,7 @@ class ModFile(Cacheable):
         self.mod_time = datetime.datetime.fromtimestamp(mtime)
         self.mod_title = None
         self.mod_desc = []
+        self.readme_rel = None
         self.readme_desc = []
         self.nexus_link = None
         self.screenshots = []
@@ -382,6 +383,7 @@ class ModFile(Cacheable):
                 't': self.mod_title,
                 'd': self.mod_desc,
                 'r': self.readme_desc,
+                'l': self.readme_rel,
                 'n': nl,
                 's': [str(s) for s in self.screenshots],
                 'y': [str(y) for y in self.youtube_urls],
@@ -401,6 +403,7 @@ class ModFile(Cacheable):
         self.mod_title = input_dict['t']
         self.mod_desc = input_dict['d']
         self.readme_desc = input_dict['r']
+        self.readme_rel = input_dict['l']
         if input_dict['n']:
             self.nexus_link = ModURL(input_dict['n'])
         else:
@@ -455,10 +458,14 @@ class ModFile(Cacheable):
         self.youtube_urls = youtube_urls
         self.urls = new_urls
 
-    def update_readme_desc(self, new_desc):
+    def update_readme_desc(self, readme, new_desc):
         """
         Updates our README description with the given array
         """
+        if readme:
+            self.readme_rel = readme.rel_filename
+        else:
+            self.readme_rel = None
         self.seen = True
         if self.status != Cacheable.S_NEW and new_desc != self.readme_desc:
             self.status = Cacheable.S_UPDATED
@@ -595,6 +602,12 @@ class ModFile(Cacheable):
         """
         return urllib.parse.quote(self.rel_filename)
 
+    def rel_readme_url(self):
+        """
+        Returns a relative URL pointing to our README file
+        """
+        return urllib.parse.quote(self.readme_rel)
+
     def get_cat_links(self, categories):
         """
         Convenience function for wiki page - generates a set of links
@@ -624,8 +637,10 @@ class Readme(Cacheable):
             full_filename = dirinfo[filename]
             self.read_file(full_filename)
             self.filename = full_filename
+            (_, self.rel_filename) = dirinfo.get_rel_path(filename)
         else:
             self.filename = None
+            self.rel_filename = None
 
     def find_matching(self, mod_name, single_mod=True):
         """
@@ -659,6 +674,7 @@ class Readme(Cacheable):
         """
         return {
                 'f': self.filename,
+                'r': self.rel_filename,
                 'm': self.mtime,
                 'd': self.mapping,
                 's': self.first_section,
@@ -669,6 +685,7 @@ class Readme(Cacheable):
         Populates ourself given the specified serialized dict
         """
         self.filename = input_dict['f']
+        self.rel_filename = input_dict['r']
         self.mapping = input_dict['d']
         self.first_section = input_dict['s']
 
@@ -1287,7 +1304,7 @@ class App(object):
                             readme_info = readme.find_matching(processed_file.mod_title, cabinet_info.single_mod)
                         else:
                             readme_info = []
-                        processed_file.update_readme_desc(readme_info)
+                        processed_file.update_readme_desc(readme, readme_info)
 
                         # Set our categories (if we'd read from cache, they may have changed)
                         processed_file.set_categories(cabinet_info_mod.categories)

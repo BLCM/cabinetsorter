@@ -11,7 +11,7 @@
 <table>
 <tr>
 <td align="center">
-<b><a href="{{ dl_base_url }}/{{ mod.rel_url() }}">Download from Github</a></b>
+<b><a href="{{ dl_base_url }}{{ mod.rel_url() }}">Download from Github</a></b>
 <br/>
 <em>(right click and "Save Link As")</em>
 </td>
@@ -21,7 +21,7 @@
 <table>
 <tr>
 <td align="center">
-<b><a href="{{ base_url }}/{{ mod.rel_url() }}">View on Github</a></b>
+<b><a href="{{ base_url }}{{ mod.rel_url() }}">View on Github</a></b>
 <br/>
 <em>(after clicking, right click on "Raw" or<br/>"Download," and then "Save Link As")</em>
 </td>
@@ -41,7 +41,9 @@
 ## README
 
 {{ mod.readme_desc|join("\n") }}
-{% endif %}
+
+[View whole README on Github]({{ base_url }}{{ mod.rel_readme_url() }})
+{%- endif %}
 
 {#- -------------------- In-Mod Description -------------------- #}
 

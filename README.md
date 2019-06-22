@@ -50,7 +50,6 @@ TODO
   but will have to do that carefully, of course.
 - Proper logging
 - Show Changelogs for single-mod info files, if found in the README
-- Link to full README
 - Figure out what to do about links with ampersands in the title
   - Use absolute links, or:
   - Convert the page title to use "and"
