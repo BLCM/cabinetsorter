@@ -49,6 +49,14 @@ TODO
 - README/Mod Description parsing could probably use some tweaking,
   but will have to do that carefully, of course.
 - Proper logging
+- Change to README path should update modfile object
+- If README doesn't end in `.md`, use "pre" indent
+- Use "pre" indent for all in-mod description
+- Flag to only update if git has updated?
+  - We don't want to run after *every* commit, because there could
+    be a bunch all at once.  But maybe if we ran every couple of
+    minutes, that could at least be an initial gate.  As opposed
+    to my original plan of every 10/15/whatever minutes.
 
 License
 -------
