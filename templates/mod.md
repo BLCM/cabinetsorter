@@ -8,12 +8,30 @@
 
 ## Download Methods
 
-| Site | Notes |
-| ---- | ----- |
-| [Download from Github]({{ dl_base_url }}/{{ mod.rel_url() }}) | *(right click and choose "Save Link As")* |
-| [View on Github]({{ base_url }}/{{ mod.rel_url() }}) | *(right-click on "Raw" or "Download" button and choose "Save Link As" to download)* |
+<table>
+<tr>
+<td align="center">
+<b><a href="{{ dl_base_url }}/{{ mod.rel_url() }}">Download from Github</a></b>
+<br/>
+<em>(right click and "Save Link As")</em>
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td align="center">
+<b><a href="{{ base_url }}/{{ mod.rel_url() }}">View on Github</a></b>
+<br/>
+<em>(after clicking, right click on "Raw" or<br/>"Download," and then "Save Link As")</em>
+</td>
+</tr>
+</table>
+
 {%- if mod.nexus_link %}
-| [Download from Nexus]({{ mod.nexus_link.url }}) | |
+
+[Download from Nexus]({{ mod.nexus_link.url }}) |
+----|
 {%- endif %}
 
 {#- -------------------- README -------------------- #}

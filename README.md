@@ -38,8 +38,6 @@ made to find out.  Required modules (installable via `pip`, of course):
 TODO
 ----
 
-- Improve download buttons/links - I don't really like how they look
-  at the moment.  Maybe even use images?
 - Handle duplicate mod names; if it's duplicate between BL2 and TPS,
   I'd propose having the TPS one have a "TPS" prefix, but it's also
   not out of the realm of possibility that we may have a duplicate
