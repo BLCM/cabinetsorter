@@ -1364,7 +1364,7 @@ class App(object):
         self.game_template = jinja_env.get_template('game.md')
         self.cat_template = jinja_env.get_template('category.md')
         self.mod_template = jinja_env.get_template('mod.md')
-        self.about_template = jinja_env.get_template('about.md')
+        self.status_template = jinja_env.get_template('status.md')
         self.sidebar_template = jinja_env.get_template('sidebar.md')
         self.author_template = jinja_env.get_template('author.md')
         self.contributing_template = jinja_env.get_template('contributing.md')
@@ -1394,11 +1394,11 @@ class App(object):
             seen_cats[game.abbreviation] = {}
 
         # Set up a reserved and created pages set
-        about_filename = 'About-ModCabinet-Wiki.md'
+        status_filename = 'Wiki-Status.md'
         sidebar_filename = '_Sidebar.md'
         contributing_filename = 'Contributing-to-ModCabinet.md'
-        reserved_pages = set([about_filename, sidebar_filename, contributing_filename])
-        created_pages = set([about_filename, sidebar_filename, contributing_filename])
+        reserved_pages = set([status_filename, sidebar_filename, contributing_filename])
+        created_pages = set([status_filename, sidebar_filename, contributing_filename])
 
         # Anything in our static_pages dir should be reserved
         static_pages = {}
@@ -1659,9 +1659,9 @@ class App(object):
                     with open(full_filename, 'w') as df:
                         df.write(content)
 
-        # Finally, our 'About' page.  This always gets written.
-        with open(os.path.join(self.cabinet_dir, about_filename), 'w') as df:
-            content = self.about_template.render({
+        # Finally, our 'Status' page.  This always gets written.
+        with open(os.path.join(self.cabinet_dir, status_filename), 'w') as df:
+            content = self.status_template.render({
                 'gen_time': datetime.datetime.now(datetime.timezone(datetime.timedelta())),
                 'errors': self.error_list,
                 })

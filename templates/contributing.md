@@ -35,10 +35,10 @@ so its `cabinet.info` file looks like this:
 
     loot-system, cheat
 
-## Update Frequency
+## Update Frequency / Error Reporting
 
-The process which updates the ModCabinet wiki updates every 10 minutes.
-You can see when it was last updated by visiting the [[About ModCabinet Wiki]]
+The process which updates the ModCabinet wiki updates every ten minutes.
+You can see when it was last updated by visiting the [[Wiki Status]]
 page.  That page will also show you any errors which happened during the last
 update.  If you had a typo in one of your category names, or something, it will
 show up on that page.
