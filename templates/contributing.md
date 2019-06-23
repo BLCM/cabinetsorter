@@ -14,34 +14,34 @@ current valid categories are:
 ## Assigning Categories
 
 If you have only one mod per directory, the `cabinet.info` file can contain
-*just* the category name.  So to put your mod into the "gear" category,
+*just* the category name.  So to put your mod into the "gear-general" category,
 the file would just contain the single word:
 
-    gear
+    gear-general
 
 If you have more than one mod in a directory, you'll have to be a little
 more wordy.  For instance, if you've got three files which should all be
-in the "gear" category, you can list them in `cabinet.info` like so:
+in the "gear-general" category, you can list them in `cabinet.info` like so:
 
-    BastardV3.txt: gear
-    CatO'NineTails.txt: gear
-    DarlinV2.txt: gear
+    BastardV3.txt: gear-general
+    CatO'NineTails.txt: gear-general
+    DarlinV2.txt: gear-general
 
 ## Assigning Multiple Categories
 
 Mods can also be in multiple categories.  For instance, Apocalyptech's BL2
-Better Loot mod fits decently in both the "cheats" and "farming" categories,
+Better Loot mod fits decently in both the "loot-system" and "cheat" categories,
 so its `cabinet.info` file looks like this:
 
-    cheats, farming
+    loot-system, cheat
 
 ## Update Frequency
 
-The process which updates the ModCabinet wiki updates every **(omg figure out
-the update frequency)**.  You can see when it was last updated by visiting
-the [[About ModCabinet Wiki]] page.  That page will also show you any errors
-which happened during the last update.  If you had a typo in one of your
-category names, or something, it will show up on that page.
+The process which updates the ModCabinet wiki updates every 10 minutes.
+You can see when it was last updated by visiting the [[About ModCabinet Wiki]]
+page.  That page will also show you any errors which happened during the last
+update.  If you had a typo in one of your category names, or something, it will
+show up on that page.
 
 ## Screenshots and Nexus Mods Links
 
@@ -50,26 +50,40 @@ download to Nexus Mods, simply add in URLs, one per line, beneath the line which
 specifies the categories.  That means that a single-mod directory might have
 a `cabinet.info` file which looks like this:
 
-    gear
+    gear-general
     https://i.imgur.com/ClUttYw.gif
 
 Or a directory which has multiple mods might look like this:
 
-    BastardV3.txt: gear
-    CatO'NineTails.txt: gear
+    BastardV3.txt: gear-general
+    CatO'NineTails.txt: gear-general
     https://i.imgur.com/W5BHeOB.jpg
-    DarlinV2.txt: gear
+    DarlinV2.txt: gear-general
 
 You can also add in text labels for your URLs by prefixing them with some text
 and separating them with a pipe (`|`) character:
 
-    BastardV3.txt: gear
-    CatO'NineTails.txt: gear
+    BastardV3.txt: gear-general
+    CatO'NineTails.txt: gear-general
     A pic of the new weapon in action|https://i.imgur.com/W5BHeOB.jpg
-    DarlinV2.txt: gear
+    DarlinV2.txt: gear-general
 
 If a URL ends in `.jpg`, `.gif`, or `.png`, it will be embedded into the
 cabinet page.  Youtube URLs will be displayed separately from other URLs.
+
+## Comments
+
+Any line which starts with a `#` will be ignored, as will empty lines, so you
+can format your `cabinet.info` files a little more nicely, if you want.
+For instance, this would be a valid file:
+
+    BastardV3.txt: gear-general
+
+    # Include a screenshot for this one...
+    CatO'NineTails.txt: gear-general
+    A pic of the new weapon in action|https://i.imgur.com/W5BHeOB.jpg
+
+    DarlinV2.txt: gear-general
 
 ## That's it!
 
