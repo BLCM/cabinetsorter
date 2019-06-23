@@ -1276,7 +1276,18 @@ class App(object):
         # Characters and Skills
         ('char-overhaul', Category('Characters and Skills: Full Character Overhauls')),
         ('skill-system', Category('Characters and Skills: Skill System Changes')),
-        ('skill', Category('Characters and Skills: Individual Skill Changes')),
+        ('skill-axton', Category('Characters and Skills: Axton Changes')),
+        ('skill-gaige', Category('Characters and Skills: Gaige Changes')),
+        ('skill-krieg', Category('Characters and Skills: Krieg Changes')),
+        ('skill-maya', Category('Characters and Skills: Maya Changes')),
+        ('skill-sal', Category('Characters and Skills: Salvador Changes')),
+        ('skill-zero', Category('Characters and Skills: Zer0 Changes')),
+        ('skill-athena', Category('Characters and Skills: Athena Changes')),
+        ('skill-aurelia', Category('Characters and Skills: Aurelia Changes')),
+        ('skill-claptrap', Category('Characters and Skills: Claptrap Changes')),
+        ('skill-jack', Category('Characters and Skills: Jack Changes')),
+        ('skill-nisha', Category('Characters and Skills: Nisha Changes')),
+        ('skill-wilhelm', Category('Characters and Skills: Wilhelm Changes')),
         ('char-changes', Category('Characters and Skills: Other Character Changes')),
 
         # Weapons/Gear
@@ -1327,7 +1338,6 @@ class App(object):
         # Quality of Life
         ('qol', Category('Quality of Life: General QoL')),
         ('qol-ui', Category('Quality of Life: UI QoL Changes')),
-        ('qol-world', Category('Quality of Life: World Interactions')),
         ('inventory', Category('Quality of Life: Inventory/Bank Changes')),
 
         # Other
