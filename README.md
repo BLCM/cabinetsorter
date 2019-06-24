@@ -56,6 +56,8 @@ TODO
 - Update unit tests, they're pretty out of date now
   - Make sure to have tests to explicitly check for MUT categories
     on FT and BLCMM files
+- `expletivedeleted/Slag Fiend` pulls in the mod itself to its
+  README, figure that out.
 
 License
 -------
