@@ -559,13 +559,16 @@ class ModFile(Cacheable):
         with everything else.
         """
         df.seek(0)
+        temp_mod_name = os.path.split(self.full_filename)[-1].rsplit('.', 1)[0]
         finding_main_cat = True
         reading_comments = False
-        cat_re = re.compile('#<(.*)>')
+        cat_re = re.compile('#<(.*?)>')
         for line in df.readlines():
             if finding_main_cat:
                 if self.re.search(cat_re, line):
                     self.mod_title = self.re.last_match.group(1)
+                    if self.mod_title == 'patch':
+                        self.mod_title = temp_mod_name
                     finding_main_cat = False
             else:
                 stripped = line.strip()
