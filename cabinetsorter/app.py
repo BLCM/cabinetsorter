@@ -1476,7 +1476,13 @@ class App(object):
                                         break
                     else:
                         for cabinet_info_mod in cabinet_info.modlist():
-                            processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, cabinet_info_mod.filename, game=game.abbreviation)))
+                            try:
+                                processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, cabinet_info_mod.filename, game=game.abbreviation)))
+                            except KeyError:
+                                self.error_list.append('ERROR: Invalid modfile "{}" specified in "{}"'.format(
+                                    cabinet_info_mod.filename,
+                                    rel_cabinet_filename,
+                                    ))
 
                     # Do Stuff with each file we got
                     for (cabinet_info_mod, processed_file) in processed_files:

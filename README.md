@@ -56,6 +56,7 @@ TODO
 - Update unit tests, they're pretty out of date now
   - Make sure to have tests to explicitly check for MUT categories
     on FT and BLCMM files
+  - Make sure to test specifying a filename which doesn't exist
 - Maybe move category list to its own "static" page, so the
   "Contributing" page doesn't have that huge table before the
   instructions?  Or at least move the table down near the bottom?
