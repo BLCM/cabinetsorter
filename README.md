@@ -62,6 +62,11 @@ TODO
   - Ethel's `King Bonerfart` mod doesn't actually show the README
     contents, though it does link to the README.  It should really
     include the whole file, given that it's just one line...
+  - GoldenGizzmo's "Super Moves™" has the trademark symbol all
+    messed up, because we're explicitly specifying `latin` encoding
+    but it's `utf8` in the file itself. Arguably we should be
+    attempting UTF-8 opening *first*, and if that fails, fall back
+    to latin1...
 
 License
 -------
