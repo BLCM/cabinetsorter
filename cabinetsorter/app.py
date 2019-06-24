@@ -1344,6 +1344,7 @@ class App(object):
         ('bugfix', Category('Other: Bugfixes')),
         ('cheat', Category('Other: Cheat Mods')),
         ('modpack', Category('Other: Mod Packs')),
+        ('translation', Category('Other: Translations')),
         ('joke', Category('Other: Joke Mods')),
         ('resource', Category('Other: Resource Mods')),
 
