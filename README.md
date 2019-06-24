@@ -53,6 +53,9 @@ TODO
     be a bunch all at once.  But maybe if we ran every couple of
     minutes, that could at least be an initial gate.  As opposed
     to my original plan of every 10/15/whatever minutes.
+- Update unit tests, they're pretty out of date now
+  - Make sure to have tests to explicitly check for MUT categories
+    on FT and BLCMM files
 
 License
 -------
