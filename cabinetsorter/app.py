@@ -1275,6 +1275,7 @@ class App(object):
         ('element', Category('General Gameplay and Balance: Elements and Damage Types')),
         ('quest-changes', Category('General Gameplay and Balance: Quest Changes')),
         ('currency', Category('General Gameplay and Balance: Currencies')),
+        ('gameplay', Category('General Gameplay and Balance: Other Gameplay Changes')),
 
         # Characters and Skills
         ('char-overhaul', Category('Characters and Skills: Full Character Overhauls')),
