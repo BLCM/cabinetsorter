@@ -56,6 +56,9 @@ TODO
 - Update unit tests, they're pretty out of date now
   - Make sure to have tests to explicitly check for MUT categories
     on FT and BLCMM files
+- Maybe move category list to its own "static" page, so the
+  "Contributing" page doesn't have that huge table before the
+  instructions?  Or at least move the table down near the bottom?
 - Bugs to look into once I'm more inclined to do real bugfixing:
   - `expletivedeleted/Slag Fiend` pulls in the mod itself to its
     README, figure that out.
