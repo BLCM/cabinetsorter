@@ -532,7 +532,7 @@ class ModFile(Cacheable):
         """
         finding_main_cat = True
         reading_comments = False
-        cat_re = re.compile('<category name="(.*)">')
+        cat_re = re.compile('<category name="(.*?)"')
         comment_re = re.compile('<comment>(.*)</comment>')
         for line in df.readlines():
             if finding_main_cat:
