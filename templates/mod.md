@@ -36,7 +36,7 @@
 
 {#- -------------------- README -------------------- #}
 
-{%- if mod.readme_desc|length > 0 %}
+{%- if mod.readme_desc|length > 0 or mod.readme_rel %}
 
 ## README
 
