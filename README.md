@@ -77,6 +77,10 @@ TODO
   - User `ii_HosT-CL-` doesn't link properly
   - Hemaxhu's `Ragdoll Enabler for Corpses [Enables it; Selectable below]`
     doesn't link properly due to the square brackets.
+  - Mods which start with a `#` are, unsurprisingly, interpreted
+    as comments in `cabinet.info` files.  I think that's only Jim
+    Raven, and he renamed the mod in the main repo, but maybe it
+    would be worth having a `\` escape char?
 
 License
 -------
