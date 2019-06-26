@@ -74,6 +74,7 @@ TODO
   - Greem has a mod named `Mod`
   - Greem's ASCII art (in, for instance, `RarityChanges`) has one
     char in it that we don't strip...
+  - User `ii_HosT-CL-` doesn't link properly
 
 License
 -------
