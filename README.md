@@ -81,6 +81,7 @@ TODO
     as comments in `cabinet.info` files.  I think that's only Jim
     Raven, and he renamed the mod in the main repo, but maybe it
     would be worth having a `\` escape char?
+  - pyromaniac420710's "Add Dragon Keep" isn't linking properly
 
 License
 -------
