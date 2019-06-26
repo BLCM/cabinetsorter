@@ -75,6 +75,8 @@ TODO
   - Greem's ASCII art (in, for instance, `RarityChanges`) has one
     char in it that we don't strip...
   - User `ii_HosT-CL-` doesn't link properly
+  - Hemaxhu's `Ragdoll Enabler for Corpses [Enables it; Selectable below]`
+    doesn't link properly due to the square brackets.
 
 License
 -------
