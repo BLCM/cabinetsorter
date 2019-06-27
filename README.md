@@ -84,8 +84,6 @@ TODO
   - Greem has a mod named `Mod`
   - Greem's ASCII art (in, for instance, `RarityChanges`) has one
     char in it that we don't strip...
-  - Hemaxhu's `Ragdoll Enabler for Corpses [Enables it; Selectable below]`
-    doesn't link properly due to the square brackets.
   - Mods which start with a `#` are, unsurprisingly, interpreted
     as comments in `cabinet.info` files.  I think that's only Jim
     Raven, and he renamed the mod in the main repo, but maybe it
