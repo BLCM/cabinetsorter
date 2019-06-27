@@ -74,6 +74,7 @@ TODO
 - Bugs to look into once I'm more inclined to do real bugfixing:
   - `expletivedeleted/Slag Fiend` pulls in the mod itself to its
     README, figure that out.
+    - Also Hemaxhu's `Live Dismember`, which gets *big*
   - Ethel's `King Bonerfart` mod doesn't actually show the README
     contents, though it does link to the README.  It should really
     include the whole file, given that it's just one line...
