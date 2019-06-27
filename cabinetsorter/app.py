@@ -1086,13 +1086,13 @@ class CabinetInfo(Cacheable):
                     self.mods[prev_modfile].add_url(line.strip())
                 else:
                     self.errors = True
-                    self.error_list.append('ERROR: Did not find previous modfile but got URL, in {}'.format(
+                    self.error_list.append('ERROR: Did not find previous modfile but got URL, in `{}`'.format(
                         self.rel_filename))
             else:
                 if ': ' in line:
                     if self.single_mod:
                         self.errors = True
-                        self.error_list.append('ERROR: Unknown line "{}" found in single-mod info file {}'.format(
+                        self.error_list.append('ERROR: Unknown line "{}" found in single-mod info file `{}`'.format(
                             line.strip(), self.rel_filename))
                     else:
                         if line[0] == '\\':
@@ -1103,7 +1103,7 @@ class CabinetInfo(Cacheable):
                 else:
                     if len(self.mods) > 0:
                         self.errors = True
-                        self.error_list.append('ERROR: Unknown line "{}" inside {}'.format(
+                        self.error_list.append('ERROR: Unknown line "{}" inside `{}`'.format(
                             line.strip(), self.rel_filename))
                     else:
                         self.single_mod = True
@@ -1120,7 +1120,7 @@ class CabinetInfo(Cacheable):
         # First check to make sure we don't already have this mod
         if mod_name in self.mods:
             self.errors = True
-            self.error_list.append('ERROR: {} specified twice inside {}'.format(
+            self.error_list.append('ERROR: {} specified twice inside `{}`'.format(
                 mod_name, self.rel_filename))
             return False
 
@@ -1132,7 +1132,7 @@ class CabinetInfo(Cacheable):
                 real_cats.append(cat)
             else:
                 self.errors = True
-                self.error_list.append('WARNING: Invalid category "{}" in {}'.format(
+                self.error_list.append('WARNING: Invalid category "{}" in `{}`'.format(
                     cat, self.rel_filename,
                     ))
 
@@ -1146,7 +1146,7 @@ class CabinetInfo(Cacheable):
             else:
                 report = 'the mod'
             self.errors = True
-            self.error_list.append('ERROR: No categories found for {} in {}'.format(report, self.rel_filename))
+            self.error_list.append('ERROR: No categories found for {} in `{}`'.format(report, self.rel_filename))
             return False
 
     def modlist(self):
@@ -1500,7 +1500,7 @@ class App(object):
                             try:
                                 processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, cabinet_info_mod.filename, game=game.abbreviation)))
                             except KeyError:
-                                self.error_list.append('ERROR: Invalid modfile "{}" specified in "{}"'.format(
+                                self.error_list.append('ERROR: Invalid modfile `{}` specified in `{}`'.format(
                                     cabinet_info_mod.filename,
                                     rel_cabinet_filename,
                                     ))
@@ -1649,9 +1649,9 @@ class App(object):
         for author in self.author_cache.values():
             author_filename = author.wiki_filename()
             if author_filename in reserved_pages:
-                self.error_list.append('ERROR: Author {} uses a reserved name'.format(author_filename))
+                self.error_list.append('ERROR: Author `{}` uses a reserved name'.format(author_filename))
             elif author_filename in created_pages:
-                self.error_list.append('ERROR: Author {} has the same name as an already-created mod'.format(author_filename))
+                self.error_list.append('ERROR: Author `{}` has the same name as an already-created mod'.format(author_filename))
             else:
                 created_pages.add(author_filename)
                 # Make sure that author.check_modlist() gets called regardless of any
@@ -1672,9 +1672,9 @@ class App(object):
         for mod in self.mod_cache.values():
             mod_filename = mod.wiki_filename()
             if mod_filename in reserved_pages:
-                self.error_list.append('ERROR: {} uses a reserved name'.format(mod.rel_filename))
+                self.error_list.append('ERROR: `{}` uses a reserved name'.format(mod.rel_filename))
             elif mod_filename in created_pages:
-                self.error_list.append('ERROR: {} has the same name as an already-created mod'.format(mod.rel_filename))
+                self.error_list.append('ERROR: `{}` has the same name as an already-created mod'.format(mod.rel_filename))
             else:
                 created_pages.add(mod_filename)
                 if (self.mod_template_mtime.status != TemplateMTime.S_CACHED

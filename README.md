@@ -69,7 +69,6 @@ TODO
 - Changelogs should only get attached to single-mod dirs.
 - Figure out something to do with, for instance, mopioid's
   Phaseclock.
-- In error list, enclose filenames in backticks
 - Sort case-insensitively
 - Bugs to look into once I'm more inclined to do real bugfixing:
   - `expletivedeleted/Slag Fiend` pulls in the mod itself to its
