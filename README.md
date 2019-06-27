@@ -91,8 +91,6 @@ TODO
     Raven, and he renamed the mod in the main repo, but maybe it
     would be worth having a `\` escape char?
   - pyromaniac420710's "Add Dragon Keep" isn't linking properly
-  - Single quotes screw up wiki links as well (I bet double-quotes
-    would, too).  For example, Kazy's `Pile O' Fck`
 
 License
 -------

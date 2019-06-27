@@ -1183,7 +1183,7 @@ def wiki_link(text, link, external=False):
         # it's the only way I've found so far to link to these pages without
         # having to hardcode a fullly-qualified URL, which I'd *really* rather
         # not do.
-        if '&' in link or link.endswith('+_') or link.endswith('-'):
+        if '&' in link or link.endswith('+_') or link.endswith('-') or '*' in link:
             return '<a href="{}">{}</a>'.format(
                     html.escape(link.replace('/', ' ')),
                     text,
