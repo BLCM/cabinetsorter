@@ -618,6 +618,13 @@ class ModFile(Cacheable):
         if not self.mod_title:
             self.mod_title = temp_mod_name
 
+        # Some really-badly-formatted files are nearly FT-compatible but
+        # are missing the hash mark in front of the XMLish stuff.  Check
+        # to see if our name happens to be enclosed in angle-brackets, and
+        # strip them out if so.
+        if self.mod_title[0] == '<' and self.mod_title[-1] == '>':
+            self.mod_title = self.mod_title[1:-1]
+
     def add_comment_line(self, comment_line, match_title=None):
         """
         Adds a comment line to our description, attempting to strip out some common

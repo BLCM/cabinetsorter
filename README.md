@@ -63,6 +63,7 @@ TODO
   - Test unicode vs. latin1 mod files
   - Test escaped leading hashes in cabinet.info files
   - ModFile sorting (case-insensitive)
+  - Angle brackets in `load_unknown`
 - Maybe move category list to its own "static" page, so the
   "Contributing" page doesn't have that huge table before the
   instructions?  Or at least move the table down near the bottom?
