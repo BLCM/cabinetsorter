@@ -59,6 +59,7 @@ TODO
   - Make sure to test specifying a filename which doesn't exist
   - Test stripping spaces from category names (silverxpenguin's
     Revalation, for instance)
+  - Test escaped quotes in BLCMM top-level category names
 - Maybe move category list to its own "static" page, so the
   "Contributing" page doesn't have that huge table before the
   instructions?  Or at least move the table down near the bottom?
@@ -88,7 +89,6 @@ TODO
     as comments in `cabinet.info` files.  I think that's only Jim
     Raven, and he renamed the mod in the main repo, but maybe it
     would be worth having a `\` escape char?
-  - pyromaniac420710's "Add Dragon Keep" isn't linking properly
 
 License
 -------
