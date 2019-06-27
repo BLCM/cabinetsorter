@@ -283,6 +283,10 @@ class Author(Cacheable):
         global wiki_filename
         return wiki_filename(self.name)
 
+    def wiki_link_html(self):
+        global wiki_link_html
+        return wiki_link_html(self.name, self.name)
+
     def wiki_link(self):
         global wiki_link
         return wiki_link(self.name, self.name)
@@ -668,6 +672,10 @@ class ModFile(Cacheable):
     def wiki_filename(self):
         global wiki_filename
         return wiki_filename(self.mod_title)
+
+    def wiki_link_html(self):
+        global wiki_link_html
+        return wiki_link_html(self.mod_title, self.mod_title)
 
     def wiki_link(self):
         global wiki_link
@@ -1191,6 +1199,17 @@ def wiki_filename(page_title, with_ext=True):
         format_str = '{}'
     return format_str.format(page_title.replace(' ', '-').replace('/', '-'))
 
+def wiki_link_html(text, link):
+    """
+    Construct a wiki link *specifically* as an HTML link, rather than markdown.
+    Doing this appears to make page rendering take fewer resources, which has
+    become a problem on our larger category pages like Pistols.
+    """
+    return '<a href="{}">{}</a>'.format(
+            html.escape(link.replace('/', ' ')),
+            text,
+            )
+
 def wiki_link(text, link, external=False):
     """
     Construct a link to another page on the wiki, given the human-readable `text`
@@ -1212,10 +1231,7 @@ def wiki_link(text, link, external=False):
                 or link.endswith('+_')
                 or link.endswith('-')
                 or '*' in link):
-            return '<a href="{}">{}</a>'.format(
-                    html.escape(link.replace('/', ' ')),
-                    text,
-                    )
+            return wiki_link_html(text, link)
         format_str = '[[{}|{}]]'
         link = link.replace('/', ' ')
     return format_str.format(

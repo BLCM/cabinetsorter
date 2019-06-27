@@ -3,6 +3,6 @@
 {{ game.wiki_link_back() }}
 
 {% for mod in mods %}
-- {{ mod.wiki_link() }}, by {{ authors[mod.mod_author].wiki_link() }}
+- {{ mod.wiki_link_html() }}, by {{ authors[mod.mod_author].wiki_link_html() }}
 {%- endfor %}
 
