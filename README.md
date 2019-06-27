@@ -82,7 +82,6 @@ TODO
     but it's `utf8` in the file itself. Arguably we should be
     attempting UTF-8 opening *first*, and if that fails, fall back
     to latin1...
-  - Greem has a mod named `Mod`
   - Greem's ASCII art (in, for instance, `RarityChanges`) has one
     char in it that we don't strip...
   - Mods which start with a `#` are, unsurprisingly, interpreted

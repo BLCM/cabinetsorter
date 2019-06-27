@@ -567,7 +567,7 @@ class ModFile(Cacheable):
             if finding_main_cat:
                 if self.re.search(cat_re, line):
                     self.mod_title = self.re.last_match.group(1).strip()
-                    if self.mod_title == 'patch':
+                    if self.mod_title.lower() == 'patch' or self.mod_title.lower() == 'mod':
                         self.mod_title = temp_mod_name
                     finding_main_cat = False
             else:
