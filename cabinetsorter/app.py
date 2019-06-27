@@ -384,7 +384,21 @@ class ModFile(Cacheable):
             self.full_filename = dirinfo[filename]
             (self.rel_path, self.rel_filename) = dirinfo.get_rel_path(filename)
             self.mod_author = dirinfo.dir_author
-            with open(self.full_filename, encoding='latin1') as df:
+
+            # We're going to do a preload here as utf-8 (the default),
+            # to see if we can read it as utf-8.  There are a number of
+            # base Borderlands objects which are latin1, so we can't
+            # use utf-8 for those, but other mod files use unicode chars
+            # in their category names, and I'd like to be able to read
+            # those properly.
+            try:
+                with open(self.full_filename, encoding='utf-8') as df:
+                    df.read()
+                encoding = 'utf-8'
+            except UnicodeDecodeError:
+                encoding = 'latin1'
+
+            with open(self.full_filename, encoding=encoding) as df:
                 first_line = df.readline()
                 if first_line.strip() == '':
                     first_line = df.readline()

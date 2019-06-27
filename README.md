@@ -60,6 +60,7 @@ TODO
   - Test stripping spaces from category names (silverxpenguin's
     Revalation, for instance)
   - Test escaped quotes in BLCMM top-level category names
+  - Test unicode vs. latin1 mod files
 - Maybe move category list to its own "static" page, so the
   "Contributing" page doesn't have that huge table before the
   instructions?  Or at least move the table down near the bottom?
@@ -77,11 +78,10 @@ TODO
     include the whole file, given that it's just one line...
     - Our Lord's `Gunless Unique Drop Sound Notifier` is doing this
       too, with a more sizeable README
-  - GoldenGizzmo's "Super Moves™" has the trademark symbol all
-    messed up, because we're explicitly specifying `latin` encoding
-    but it's `utf8` in the file itself. Arguably we should be
-    attempting UTF-8 opening *first*, and if that fails, fall back
-    to latin1...
+    - I think this is actually due to multi-mod processing, which
+      makes sense.  In Ethel's case there's two mods in there For
+      Real, and in Our Lord's case it's just specified that way
+      'cause that's what would make sense...
   - Greem's ASCII art (in, for instance, `RarityChanges`) has one
     char in it that we don't strip...
   - Mods which start with a `#` are, unsurprisingly, interpreted
