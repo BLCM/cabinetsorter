@@ -1095,6 +1095,8 @@ class CabinetInfo(Cacheable):
                         self.error_list.append('ERROR: Unknown line "{}" found in single-mod info file {}'.format(
                             line.strip(), self.rel_filename))
                     else:
+                        if line[0] == '\\':
+                            line = line[1:]
                         (mod_filename, mod_categories) = line.split(': ', 1)
                         if self.register(mod_filename, mod_categories):
                             prev_modfile = mod_filename

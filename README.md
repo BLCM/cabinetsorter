@@ -61,6 +61,7 @@ TODO
     Revalation, for instance)
   - Test escaped quotes in BLCMM top-level category names
   - Test unicode vs. latin1 mod files
+  - Test escaped leading hashes in cabinet.info files
 - Maybe move category list to its own "static" page, so the
   "Contributing" page doesn't have that huge table before the
   instructions?  Or at least move the table down near the bottom?
@@ -84,10 +85,6 @@ TODO
       'cause that's what would make sense...
   - Greem's ASCII art (in, for instance, `RarityChanges`) has one
     char in it that we don't strip...
-  - Mods which start with a `#` are, unsurprisingly, interpreted
-    as comments in `cabinet.info` files.  I think that's only Jim
-    Raven, and he renamed the mod in the main repo, but maybe it
-    would be worth having a `\` escape char?
 
 License
 -------

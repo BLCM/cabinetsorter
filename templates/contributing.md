@@ -85,6 +85,19 @@ For instance, this would be a valid file:
 
     DarlinV2.txt: gear-general
 
+## Mods Whose Filenames Start With A Hash Sign (#)
+
+If, by chance, you have a filename which starts with a hash sign (`#`),
+specifying that file in your `cabinet.info` would make it look like a
+comment, so the sorter would totally ignore it.  To make it show up
+anyway, prefix the hash with a backslash (`\`).  For instance:
+
+    319: gear-smg
+    \#Bast mod ever!!!!!!!: gameplay
+    Davud: gear-sniper
+
+Though really, it's easier to just name your files sensibly, instead.
+
 ## That's it!
 
 Just check in your `cabinet.info` file the exact same way you'd check in a mod
