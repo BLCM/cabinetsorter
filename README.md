@@ -57,6 +57,8 @@ TODO
   - Make sure to have tests to explicitly check for MUT categories
     on FT and BLCMM files
   - Make sure to test specifying a filename which doesn't exist
+  - Test stripping spaces from category names (silverxpenguin's
+    Revalation, for instance)
 - Maybe move category list to its own "static" page, so the
   "Contributing" page doesn't have that huge table before the
   instructions?  Or at least move the table down near the bottom?
@@ -65,6 +67,7 @@ TODO
 - Figure out something to do with, for instance, mopioid's
   Phaseclock.
 - In error list, enclose filenames in backticks
+- Sort case-insensitively
 - Bugs to look into once I'm more inclined to do real bugfixing:
   - `expletivedeleted/Slag Fiend` pulls in the mod itself to its
     README, figure that out.
@@ -81,7 +84,6 @@ TODO
   - Greem has a mod named `Mod`
   - Greem's ASCII art (in, for instance, `RarityChanges`) has one
     char in it that we don't strip...
-  - User `ii_HosT-CL-` doesn't link properly
   - Hemaxhu's `Ragdoll Enabler for Corpses [Enables it; Selectable below]`
     doesn't link properly due to the square brackets.
   - Mods which start with a `#` are, unsurprisingly, interpreted
@@ -89,8 +91,6 @@ TODO
     Raven, and he renamed the mod in the main repo, but maybe it
     would be worth having a `\` escape char?
   - pyromaniac420710's "Add Dragon Keep" isn't linking properly
-  - Check on Lollo's Hot Mama Barrel Customization Mod; the v1.1
-    file starts with a space...
   - Single quotes screw up wiki links as well (I bet double-quotes
     would, too).  For example, Kazy's `Pile O' Fck`
 

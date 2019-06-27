@@ -537,7 +537,7 @@ class ModFile(Cacheable):
         for line in df.readlines():
             if finding_main_cat:
                 if self.re.search(cat_re, line):
-                    self.mod_title = self.re.last_match.group(1)
+                    self.mod_title = self.re.last_match.group(1).strip()
                     finding_main_cat = False
             elif reading_comments:
                 if self.re.search(comment_re, line):
@@ -566,7 +566,7 @@ class ModFile(Cacheable):
         for line in df.readlines():
             if finding_main_cat:
                 if self.re.search(cat_re, line):
-                    self.mod_title = self.re.last_match.group(1)
+                    self.mod_title = self.re.last_match.group(1).strip()
                     if self.mod_title == 'patch':
                         self.mod_title = temp_mod_name
                     finding_main_cat = False
@@ -1183,7 +1183,7 @@ def wiki_link(text, link, external=False):
         # it's the only way I've found so far to link to these pages without
         # having to hardcode a fullly-qualified URL, which I'd *really* rather
         # not do.
-        if '&' in link or '+_' in link:
+        if '&' in link or link.endswith('+_') or link.endswith('-'):
             return '<a href="{}">{}</a>'.format(
                     html.escape(link.replace('/', ' ')),
                     text,
