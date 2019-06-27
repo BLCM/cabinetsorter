@@ -84,6 +84,8 @@ TODO
     Raven, and he renamed the mod in the main repo, but maybe it
     would be worth having a `\` escape char?
   - pyromaniac420710's "Add Dragon Keep" isn't linking properly
+  - Check on Lollo's Hot Mama Barrel Customization Mod; the v1.1
+    file starts with a space...
 
 License
 -------
