@@ -656,7 +656,7 @@ class ModFile(Cacheable):
         """
         Sort by mod title
         """
-        return self.mod_title < other.mod_title
+        return self.mod_title.lower() < other.mod_title.lower()
 
     def wiki_filename(self):
         global wiki_filename

@@ -62,6 +62,7 @@ TODO
   - Test escaped quotes in BLCMM top-level category names
   - Test unicode vs. latin1 mod files
   - Test escaped leading hashes in cabinet.info files
+  - ModFile sorting (case-insensitive)
 - Maybe move category list to its own "static" page, so the
   "Contributing" page doesn't have that huge table before the
   instructions?  Or at least move the table down near the bottom?
@@ -69,7 +70,6 @@ TODO
 - Changelogs should only get attached to single-mod dirs.
 - Figure out something to do with, for instance, mopioid's
   Phaseclock.
-- Sort case-insensitively
 - Bugs to look into once I'm more inclined to do real bugfixing:
   - `expletivedeleted/Slag Fiend` pulls in the mod itself to its
     README, figure that out.
@@ -84,6 +84,11 @@ TODO
       'cause that's what would make sense...
   - Greem's ASCII art (in, for instance, `RarityChanges`) has one
     char in it that we don't strip...
+  - Nifsara's multiple `UVHM Rebalance` mods are showing up
+    individually in the `Game Mode Balance` section, but are all
+    linking to the same file (since the category name is the same
+    for all).  Why doesn't this trip our anti-duplicate-name
+    check?
 
 License
 -------
