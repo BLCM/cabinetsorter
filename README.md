@@ -60,6 +60,8 @@ TODO
 - Maybe move category list to its own "static" page, so the
   "Contributing" page doesn't have that huge table before the
   instructions?  Or at least move the table down near the bottom?
+- If a README file disappears, the mod page should get updated.
+- Changelogs should only get attached to single-mod dirs.
 - Bugs to look into once I'm more inclined to do real bugfixing:
   - `expletivedeleted/Slag Fiend` pulls in the mod itself to its
     README, figure that out.
