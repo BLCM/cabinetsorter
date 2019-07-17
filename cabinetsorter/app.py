@@ -1730,11 +1730,11 @@ class App(object):
             # Delete pages which no longer exist
             for filename in wiki_files:
                 if filename not in created_pages:
-                    wikirepo.git.rm(filename)
+                    wikirepo.git.rm('--', filename)
 
             # Mark any new files as to-be-added
             for filename in wikirepo.untracked_files:
-                wikirepo.git.add(filename)
+                wikirepo.git.add('--', filename)
 
             # Commit all wiki changes and push, if we need to (which we should, since About
             # always gets updated)
