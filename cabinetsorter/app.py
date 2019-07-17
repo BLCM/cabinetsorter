@@ -1516,7 +1516,7 @@ class App(object):
                                         break
                             if len(processed_files) == 0:
                                 for random_file in dirinfo.get_all():
-                                    if 'readme' not in random_file.lower() and 'changelog' not in random_file.lower():
+                                    if 'readme' not in random_file.lower() and 'changelog' not in random_file.lower() and 'cabinet.info' not in random_file.lower():
                                         processed_files.append((cabinet_info_mod, self.mod_cache.load(dirinfo, random_file, game=game.abbreviation)))
                                         # Again, just grab the first one
                                         break
