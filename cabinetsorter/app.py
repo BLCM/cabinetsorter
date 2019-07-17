@@ -832,11 +832,12 @@ class Readme(Cacheable):
                 # Multiline markdown section highlighting.  Annoying!  A
                 # shame I personally use it all the time, eh?
                 if prev_line:
-                    self.mapping[cur_section].pop()
-                    if self.first_section == cur_section and len(self.mapping[cur_section]) == 0:
-                        self.first_section = None
-                    cur_section = prev_line.strip().lower()
-                    self.mapping[cur_section] = []
+                    if len(self.mapping[cur_section]) > 0:
+                        self.mapping[cur_section].pop()
+                        if self.first_section == cur_section and len(self.mapping[cur_section]) == 0:
+                            self.first_section = None
+                        cur_section = prev_line.strip().lower()
+                        self.mapping[cur_section] = []
                 else:
                     if not self.first_section:
                         self.first_section = cur_section
@@ -845,11 +846,12 @@ class Readme(Cacheable):
                 # Multiline markdown section highlighting.  Annoying!  A
                 # shame I personally use it all the time, eh?
                 if prev_line:
-                    self.mapping[cur_section].pop()
-                    if self.first_section == cur_section and len(self.mapping[cur_section]) == 0:
-                        self.first_section = None
-                    cur_section = prev_line.strip().lower()
-                    self.mapping[cur_section] = []
+                    if len(self.mapping[cur_section]) > 0:
+                        self.mapping[cur_section].pop()
+                        if self.first_section == cur_section and len(self.mapping[cur_section]) == 0:
+                            self.first_section = None
+                        cur_section = prev_line.strip().lower()
+                        self.mapping[cur_section] = []
                 else:
                     if not self.first_section:
                         self.first_section = cur_section
