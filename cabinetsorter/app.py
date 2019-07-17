@@ -1738,7 +1738,13 @@ class App(object):
             # Delete pages which no longer exist
             for filename in wiki_files:
                 if filename not in created_pages:
-                    wikirepo.git.rm('--', filename)
+                    try:
+                        wikirepo.git.rm('--', filename)
+                    except git.exc.GitCommandError as e:
+                        # If I have a file open or whatever in here with a .swp file, or
+                        # if some file exists which is outside the repo, we'll get this
+                        # error.  Let's not die just because of that.
+                        print('Could not "git rm" on filename: {}'.format(filename))
 
             # Mark any new files as to-be-added
             for filename in wikirepo.untracked_files:
