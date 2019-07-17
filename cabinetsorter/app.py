@@ -28,10 +28,10 @@ import json
 import lzma
 import html
 import jinja2
-import urllib
 import datetime
 import collections
 import Levenshtein
+import urllib.parse
 
 class Re(object):
     """
@@ -1208,11 +1208,19 @@ def wiki_link_html(text, link):
     become a problem on our larger category pages like Pistols.
     """
     return '<a href="{}">{}</a>'.format(
-            html.escape(link.replace('/', ' ')),
-            text,
+            #html.escape(link.replace('/', ' ')),
+            urllib.parse.quote(link.replace('/', ' ')),
+            html.escape(text),
             )
 
 def wiki_link(text, link, external=False):
+    """
+    Redirects to wiki_link_html.  "Real" wiki links are just too dangerous on
+    Github wiki -- too many and pages become unrenderable.
+    """
+    return wiki_link_html(text, link)
+
+def wiki_link_disabled(text, link, external=False):
     """
     Construct a link to another page on the wiki, given the human-readable `text`
     and the page title `link`.  If `external` is true, will generate an external
@@ -1261,8 +1269,8 @@ class Category(object):
         return wiki_filename('{} {}'.format(game.abbreviation, self.full_title))
 
     def wiki_link(self, game):
-        global wiki_link
-        return wiki_link(self.title, '{} {}'.format(game.abbreviation, self.full_title))
+        global wiki_link_html
+        return wiki_link_html(self.title, '{} {}'.format(game.abbreviation, self.full_title))
 
     def wiki_link_abbrev(self, game_abbrev):
         global wiki_link
