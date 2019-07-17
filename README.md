@@ -70,7 +70,7 @@ TODO
 - If a README file disappears, the mod page should get updated.
 - Changelogs should only get attached to single-mod dirs.
 - Figure out something to do with, for instance, mopioid's
-  Phaseclock.
+  Phaseclock.  Also Robeth's TimeScale?
 - Only use HTML links in categories when they're over N items?
 - Use "Intro" as a valid description header to look for, when looking
   for READMEs in single-mod dirs?  PsychoPatate's READMEs seem to
