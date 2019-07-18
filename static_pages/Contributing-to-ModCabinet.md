@@ -1,11 +1,33 @@
 [[← Go Back|Home]]
 
 Contributing to the ModCabinet wiki is quite easy if you've already checked
-in your mod to the Github.  Just include a file named `cabinet.info` alongside
-your mod(s) to specify the category you'd like to use for the mods.  The
-current valid categories are listed on the [[Mod Categories]] page.
+in your mod to the Github.  Here's how!
+
+- [Adding Your Mod to ModCabinet](#adding-your-mod-to-modcabinet)
+- [Assigning Categories](#assigning-categories)
+- [Assigning Multiple Categories](#assigning-multiple-categories)
+- [Update Frequency / Error Reporting](#update-frequency--error-reporting)
+- [Screenshots and Nexus Mods Links](#screenshots-and-nexus-mods-links)
+- [Comments](#comments)
+- [Mods Whose Filenames Start With A Hash Sign](#mods-whose-filenames-start-with-a-hash-sign-)
+- [Formatting your README for Maximum Results](#formatting-your-readme-for-maximum-results)
+
+## Adding Your Mod to ModCabinet
+
+In order to have your mods listed in the ModCabinet, they have to be uploaded
+to [the main BLCMods Github repostiory](https://github.com/BLCM/BLCMods).  There
+are instructions for doing so [at the BLCMods Wiki](https://github.com/BLCM/BLCMods/wiki/Contribution).
+
+Once you know how to do that, getting your mod in this wiki is easy: you just
+need to add another file alongside your mod, named `cabinet.info`.  At its
+simplest level, this file just has to contain the category you want to put
+your mod into.  Once that file's been uploaded to the BLCMods repo, the
+ModCabinet wiki should get updated within ten minutes to include your mod.
 
 ## Assigning Categories
+
+The current valid categories that you can use in your `cabinet.info` file
+are listed on the [[Mod Categories]] page.
 
 If you have only one mod per directory, the `cabinet.info` file can contain
 *just* the category name.  So to put your mod into the "gear-general" category,
@@ -91,6 +113,35 @@ anyway, prefix the hash with a backslash (`\`).  For instance:
     Davud: gear-sniper
 
 Though really, it's easier to just name your files sensibly, instead.
+
+## Formatting your README for Maximum Results
+
+ModCabinet will automatically include information from your README files if
+it's able to understand how it's laid out.  You'll have best luck if you
+format your README files with [Markdown](https://guides.github.com/features/mastering-markdown/)
+(so name them `README.md`, for instance), but it will also understand
+plain-text README files.
+
+In a directory with only a single mod, make sure that the main part of
+your mod description is in a section with a heading of `Description`, or
+that it's at the top of the README file (or in the very first section,
+if there's nothing right at the beginning).  That will be imported into
+the ModCabinet wiki.  If you have a section named `Changelog`, that will
+be imported into the ModCabinet page as well.  For an example of a
+ModCabinet page which has pulled in all these elements, see Apocalyptech's
+[[Speedier Sandskiffs]], which was generated using
+[this README](https://raw.githubusercontent.com/BLCM/BLCMods/master/Borderlands%202%20mods/Apocalyptech/Speedier%20Sandskiffs/README.md).
+
+In a directory with multiple mods, ModCabinet needs to have a clearly-marked
+section of the README file which has the same name as the mod.  Sections
+in the modfile can be marked with any of the usual Markdown-style section
+headings such as hashes (`#`) or underlines (`---` or `===`), even if it's
+not Markdown.  You can also use Markdown-style list syntax, where the line
+containing the mod name is prefixed by a dash (`-`).  For instance, see [this README from
+Akathris](https://raw.githubusercontent.com/BLCM/BLCMods/master/Borderlands%202%20mods/Akathris/README.md),
+which applies to mods such as [[No More Moxxi Lifesteal v1.0]].  Note that
+mods in directories which contain multiple mods won't be able to read in
+Changelogs, so those will never show up in ModCabinet pages.
 
 ## That's it!
 
