@@ -687,7 +687,7 @@ class ModFile(Cacheable):
             return
 
         # Attempt to prevent adding in header ASCII art
-        if len(self.mod_desc) == 0 and line.strip("_/\\.:|#~ \t") == '':
+        if len(self.mod_desc) == 0 and line.strip("[]_/\\.:|#~ \t") == '':
             return
 
         # Attempt to match on a title, if we can (and return without adding,

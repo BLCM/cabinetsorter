@@ -57,6 +57,7 @@ TODO
   - We've moved to always using full HTML HREFs instead of wiki
     links, when calling `wiki_link`
   - In `ModFile.load_unknown()`, check for FT-style categories
+  - Strip square brackets from ASCII art
 - Maybe move category list to its own "static" page, so the
   "Contributing" page doesn't have that huge table before the
   instructions?  Or at least move the table down near the bottom?
@@ -68,9 +69,6 @@ TODO
   from the cache.  I don't care enough to fix that edge case at the
   moment, but it may bear looking into later.  (vWolvenn's "Tsunami"
   is the only current case of this actually happening.)
-- Bugs to look into once I'm more inclined to do real bugfixing:
-  - Greem's ASCII art (in, for instance, `RarityChanges`) has one
-    char in it that we don't strip...
 
 License
 -------
