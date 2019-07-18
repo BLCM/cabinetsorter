@@ -652,7 +652,7 @@ class ModFile(Cacheable):
         temp_mod_name = os.path.split(self.full_filename)[-1].rsplit('.', 1)[0]
         df.seek(0)
         for line in df.readlines():
-            if line.strip().startswith('set '):
+            if line.strip().startswith('set ') or line.strip().startswith('#<'):
                 break
             else:
                 self.add_comment_line(line, match_title=temp_mod_name)

@@ -56,6 +56,7 @@ TODO
   - `wiki_filename` processing
   - We've moved to always using full HTML HREFs instead of wiki
     links, when calling `wiki_link`
+  - In `ModFile.load_unknown()`, check for FT-style categories
 - Maybe move category list to its own "static" page, so the
   "Contributing" page doesn't have that huge table before the
   instructions?  Or at least move the table down near the bottom?
@@ -64,9 +65,6 @@ TODO
 - Figure out something to do with, for instance, mopioid's
   Phaseclock.  Also Robeth's TimeScale?
 - Bugs to look into once I'm more inclined to do real bugfixing:
-  - `expletivedeleted/Slag Fiend` pulls in the mod itself to its
-    README, figure that out.
-    - Also Hemaxhu's `Live Dismember`, which gets *big*
   - Ethel's `King Bonerfart` mod doesn't actually show the README
     contents, though it does link to the README.  It should really
     include the whole file, given that it's just one line...
