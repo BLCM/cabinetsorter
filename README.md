@@ -48,6 +48,7 @@ TODO
 - README/Mod Description parsing could probably use some tweaking,
   but will have to do that carefully, of course.
 - Proper logging
+- Link to the mod's *directory* instead of the mod file, for "view?"
 - Flag to only update if git has updated?
   - We don't want to run after *every* commit, because there could
     be a bunch all at once.  But maybe if we ran every couple of
@@ -64,6 +65,9 @@ TODO
   - Test escaped leading hashes in cabinet.info files
   - ModFile sorting (case-insensitive)
   - Angle brackets in `load_unknown`
+  - `wiki_filename` processing
+  - We've moved to always using full HTML HREFs instead of wiki
+    links, when calling `wiki_link`
 - Maybe move category list to its own "static" page, so the
   "Contributing" page doesn't have that huge table before the
   instructions?  Or at least move the table down near the bottom?

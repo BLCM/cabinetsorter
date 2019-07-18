@@ -370,6 +370,8 @@ class ModFile(Cacheable):
         super().__init__(mtime, initial_status)
         self.mod_time = datetime.datetime.fromtimestamp(mtime)
         self.mod_title = None
+        self.mod_title_display = None
+        self.wiki_filename_base = None
         self.mod_desc = []
         self.readme_rel = None
         self.readme_desc = []
@@ -386,7 +388,8 @@ class ModFile(Cacheable):
             # This is when we're actually loading from a file
             self.seen = True
             self.full_filename = dirinfo[filename]
-            (self.rel_path, self.rel_filename) = dirinfo.get_rel_path(filename)
+            (self.rel_path, temp_rel_filename) = dirinfo.get_rel_path(filename)
+            self.rel_filename = temp_rel_filename.split(os.path.sep)[-1]
             self.mod_author = dirinfo.dir_author
 
             # We're going to do a preload here as utf-8 (the default),
@@ -437,8 +440,10 @@ class ModFile(Cacheable):
                 'ff': self.full_filename,
                 'rp': self.rel_path,
                 'rf': self.rel_filename,
+                'w': self.wiki_filename_base,
                 'a': self.mod_author,
                 't': self.mod_title,
+                'i': self.mod_title_display,
                 'd': self.mod_desc,
                 'r': self.readme_desc,
                 'l': self.readme_rel,
@@ -458,8 +463,10 @@ class ModFile(Cacheable):
         self.full_filename = input_dict['ff']
         self.rel_path = input_dict['rp']
         self.rel_filename = input_dict['rf']
+        self.wiki_filename_base = input_dict['w']
         self.mod_author = input_dict['a']
         self.mod_title = input_dict['t']
+        self.mod_title_display = input_dict['i']
         self.mod_desc = input_dict['d']
         self.readme_desc = input_dict['r']
         self.readme_rel = input_dict['l']
@@ -474,6 +481,12 @@ class ModFile(Cacheable):
         self.categories = set(input_dict['c'])
         self.game = input_dict['g']
 
+    def get_full_rel_filename(self):
+        """
+        Returns our "full" relative filename
+        """
+        return os.path.join(self.rel_path, self.rel_filename)
+
     def set_categories(self, categories):
         """
         Sets our categories, updating our status if need be
@@ -484,6 +497,26 @@ class ModFile(Cacheable):
             if self.status != Cacheable.S_NEW:
                 self.status = Cacheable.S_UPDATED
             self.categories = new_cats
+
+    def set_title_display(self, mod_title_display):
+        """
+        Sets our display title (for links), updating our status if need be
+        """
+        self.seen = True
+        if mod_title_display != self.mod_title_display:
+            if self.status != Cacheable.S_NEW:
+                self.status = Cacheable.S_UPDATED
+            self.mod_title_display = mod_title_display
+
+    def set_wiki_filename_base(self, wiki_filename_base):
+        """
+        Sets our wiki filename base, updating our status if need be
+        """
+        self.seen = True
+        if wiki_filename_base != self.wiki_filename_base:
+            if self.status != Cacheable.S_NEW:
+                self.status = Cacheable.S_UPDATED
+            self.wiki_filename_base = wiki_filename_base
 
     def set_urls(self, urls):
         """
@@ -671,22 +704,22 @@ class ModFile(Cacheable):
 
     def wiki_filename(self):
         global wiki_filename
-        return wiki_filename(self.mod_title)
+        return wiki_filename(self.wiki_filename_base)
 
     def wiki_link_html(self):
         global wiki_link_html
-        return wiki_link_html(self.mod_title, self.mod_title)
+        return wiki_link_html(self.mod_title_display, self.wiki_filename_base)
 
     def wiki_link(self):
         global wiki_link
-        return wiki_link(self.mod_title, self.mod_title)
+        return wiki_link(self.mod_title_display, self.wiki_filename_base)
 
     def rel_url(self):
         """
         Returns a relative URL which we can add to our base_url to
         construct a full link to the mod.
         """
-        return urllib.parse.quote(self.rel_filename)
+        return urllib.parse.quote('/'.join([self.rel_path, self.rel_filename]))
 
     def rel_readme_url(self):
         """
@@ -1479,6 +1512,7 @@ class App(object):
             modsrepo.git.pull()
 
         # Loop through our game dirs
+        name_resolution = {}
         for game in self.games.values():
             game_dir = os.path.join(self.repo_dir, game.dir_name)
             for (dirpath, dirnames, filenames) in os.walk(game_dir):
@@ -1564,19 +1598,24 @@ class App(object):
                         # Set our URLs (likewise, if from cache then they may have changed)
                         processed_file.set_urls(cabinet_info_mod.urls)
 
-                        # Add this mod to an author obj
-                        if processed_file.mod_author:
-                            if processed_file.mod_author not in self.author_cache:
-                                self.author_cache[processed_file.mod_author] = Author(0,
-                                        initial_status=Author.S_NEW,
-                                        name=processed_file.mod_author)
-                            self.author_cache[processed_file.mod_author].add_mod(processed_file)
+                        # Previously we were adding mods to our author cache here, but we need
+                        # to wait until we resolve any potential mod name conflicts first, so
+                        # that's now happening later...
+
+                        # Add to our name_resolution object for later processing
+                        if processed_file.mod_title not in name_resolution:
+                            name_resolution[processed_file.mod_title] = {}
+                        if game not in name_resolution[processed_file.mod_title]:
+                            name_resolution[processed_file.mod_title][game] = {}
+                        if processed_file.mod_author not in name_resolution[processed_file.mod_title][game]:
+                            name_resolution[processed_file.mod_title][game][processed_file.mod_author] = {}
+                        name_resolution[processed_file.mod_title][game][processed_file.mod_author][processed_file.rel_filename] = processed_file.full_filename
 
         # Some console reporting, for interactive testing.
         if False:
             for mod in self.mod_cache.values():
                 if mod.status == Cacheable.S_NEW or mod.status == Cacheable.S_UPDATED:
-                    print('{} ({})'.format(mod.rel_filename, Cacheable.S_ENG[mod.status]))
+                    print('{} ({})'.format(mod.get_full_rel_filename(), Cacheable.S_ENG[mod.status]))
                     print(mod.mod_title)
                     print(mod.mod_author)
                     print(mod.mod_time)
@@ -1606,6 +1645,53 @@ class App(object):
                 to_delete.append(filename)
         for filename in to_delete:
             del self.mod_cache[filename]
+
+        # Resolve any mod names -- needed in case more than one mod has the same name.
+        # This happens a *bit* within a game itself, and quite a bit across game
+        # boundaries.  Note that this needs to happen *before* any categories or
+        # author pages are written out.
+        for (mod_title, mod_games) in name_resolution.items():
+            need_game = (len(mod_games) > 1)
+            for (game, mod_authors) in mod_games.items():
+                if need_game:
+                    game_suffix = ' - {}'.format(game.abbreviation)
+                else:
+                    game_suffix = ''
+                need_author = (len(mod_authors) > 1)
+                for (author_name, mod_files) in mod_authors.items():
+                    if need_author:
+                        author_suffix = ' by {}'.format(author_name)
+                    else:
+                        author_suffix = ''
+                    need_filename = (len(mod_files) > 1)
+                    for (mod_filename, mod_full_filename) in mod_files.items():
+                        if mod_full_filename in self.mod_cache:
+                            mod_obj = self.mod_cache[mod_full_filename]
+                            if need_filename:
+                                filename_suffix = ' (from {})'.format(mod_filename)
+                            else:
+                                filename_suffix = ''
+                            new_filename = '{}{}{}{}'.format(
+                                    mod_obj.mod_title,
+                                    filename_suffix,
+                                    author_suffix,
+                                    game_suffix,
+                                    )
+                            new_title_display = '{}{}{}'.format(
+                                    mod_obj.mod_title,
+                                    filename_suffix,
+                                    game_suffix,
+                                    )
+                            mod_obj.set_wiki_filename_base(new_filename)
+                            mod_obj.set_title_display(new_title_display)
+
+                            # Add this mod to an author obj
+                            if mod_obj.mod_author:
+                                if mod_obj.mod_author not in self.author_cache:
+                                    self.author_cache[mod_obj.mod_author] = Author(0,
+                                            initial_status=Author.S_NEW,
+                                            name=mod_obj.mod_author)
+                                self.author_cache[mod_obj.mod_author].add_mod(mod_obj)
 
         # Pull down the most recent wiki revision (nobody "should" be editing this
         # manually, but I'm sure it'll happen eventually)
@@ -1705,9 +1791,9 @@ class App(object):
         for mod in self.mod_cache.values():
             mod_filename = mod.wiki_filename()
             if mod_filename in reserved_pages:
-                self.error_list.append('ERROR: `{}` uses a reserved name'.format(mod.rel_filename))
+                self.error_list.append('ERROR: `{}` uses a reserved name'.format(mod.get_full_rel_filename()))
             elif mod_filename in created_pages:
-                self.error_list.append('ERROR: `{}` has the same name as an already-created mod'.format(mod.rel_filename))
+                self.error_list.append('ERROR: `{}` has the same name as an already-created mod'.format(mod.get_full_rel_filename()))
             else:
                 created_pages.add(mod_filename)
                 if (self.mod_template_mtime.status != TemplateMTime.S_CACHED
