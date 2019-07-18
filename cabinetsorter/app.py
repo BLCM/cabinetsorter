@@ -1705,13 +1705,15 @@ class App(object):
                         # that's now happening later...
 
                         # Add to our name_resolution object for later processing
-                        if processed_file.mod_title not in name_resolution:
-                            name_resolution[processed_file.mod_title] = {}
-                        if game not in name_resolution[processed_file.mod_title]:
-                            name_resolution[processed_file.mod_title][game] = {}
-                        if processed_file.mod_author not in name_resolution[processed_file.mod_title][game]:
-                            name_resolution[processed_file.mod_title][game][processed_file.mod_author] = {}
-                        name_resolution[processed_file.mod_title][game][processed_file.mod_author][processed_file.rel_filename] = processed_file.full_filename
+                        title_lower = processed_file.mod_title.lower()
+                        if title_lower not in name_resolution:
+                            name_resolution[title_lower] = {}
+                        if game not in name_resolution[title_lower]:
+                            name_resolution[title_lower][game] = {}
+                        author_lower = processed_file.mod_author.lower()
+                        if author_lower not in name_resolution[title_lower][game]:
+                            name_resolution[title_lower][game][author_lower] = {}
+                        name_resolution[title_lower][game][author_lower][processed_file.rel_filename] = processed_file.full_filename
 
         # Report that we're done
         self.logger.debug('Finished looping through mods directory')
@@ -1778,18 +1780,26 @@ class App(object):
                     game_suffix = ''
                 need_author = (len(mod_authors) > 1)
                 for (author_name, mod_files) in mod_authors.items():
-                    if need_author:
-                        author_suffix = ' by {}'.format(author_name)
-                    else:
-                        author_suffix = ''
                     need_filename = (len(mod_files) > 1)
                     for (mod_filename, mod_full_filename) in mod_files.items():
                         if mod_full_filename in self.mod_cache:
                             mod_obj = self.mod_cache[mod_full_filename]
+
+                            # Filename suffix
                             if need_filename:
                                 filename_suffix = ' (from {})'.format(mod_filename)
                             else:
                                 filename_suffix = ''
+
+                            # Construct author suffix.  We don't do this until now because
+                            # our name_resolution dict is all lowercase, which may not be
+                            # appropriate.
+                            if need_author:
+                                author_suffix = ' by {}'.format(mod_obj.mod_author)
+                            else:
+                                author_suffix = ''
+
+                            # Construct wiki filename and display title
                             new_filename = '{}{}{}{}'.format(
                                     mod_obj.mod_title,
                                     filename_suffix,
@@ -1801,9 +1811,13 @@ class App(object):
                                     filename_suffix,
                                     game_suffix,
                                     )
+
+                            # This is kind of ridiculous, but it happens once; doublecheck
+                            # to see if the filename conflicts with an author filename.
                             if new_filename in author_names:
-                                # This is kind of ridiculous, but it happens once.
                                 new_filename = '{} by {}'.format(new_filename, author_name)
+
+                            # Now set our information
                             mod_obj.set_wiki_filename_base(new_filename)
                             mod_obj.set_title_display(new_title_display)
 
