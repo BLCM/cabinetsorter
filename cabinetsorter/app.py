@@ -361,6 +361,10 @@ class ModURL(object):
             return self.url
 
     def __eq__(self, other):
+        if self.url and not other.url:
+            return False
+        if other.url and not self.url:
+            return False
         return self.url == other.url and self.text == other.text
 
 class ModFile(Cacheable):
