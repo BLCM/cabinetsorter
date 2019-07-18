@@ -724,6 +724,13 @@ class ModFile(Cacheable):
         """
         return urllib.parse.quote('/'.join([self.rel_path, self.rel_filename]))
 
+    def rel_url_dir(self):
+        """
+        Returns a relative URL which we can add to our base_url to
+        construct a full link to the directory which contains the mod.
+        """
+        return urllib.parse.quote(self.rel_path)
+
     def rel_readme_url(self):
         """
         Returns a relative URL pointing to our README file

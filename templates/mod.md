@@ -21,9 +21,9 @@
 <table>
 <tr>
 <td align="center">
-<b><a href="{{ base_url }}{{ mod.rel_url() }}">View on Github</a></b>
+<b><a href="{{ base_url }}{{ mod.rel_url_dir() }}">View on Github</a></b>
 <br/>
-<em>(after clicking, right click on "Raw" or<br/>"Download," and then "Save Link As")</em>
+<em>(after clicking on a mod, right click on "Raw" or<br/>"Download," and then "Save Link As")</em>
 </td>
 </tr>
 </table>

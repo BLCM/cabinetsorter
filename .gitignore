@@ -2,3 +2,4 @@ cache/*.json.xz
 *.swp
 **/__pycache__
 .coverage
+cabinet.log

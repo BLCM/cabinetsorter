@@ -41,7 +41,6 @@ TODO
 - Pull some of the config stuff out to a config file
 - README/Mod Description parsing could probably use some tweaking,
   but will have to do that carefully, of course.
-- Link to the mod's *directory* instead of the mod file, for "view?"
 - Update unit tests, they're pretty out of date now
   - Make sure to have tests to explicitly check for MUT categories
     on FT and BLCMM files
