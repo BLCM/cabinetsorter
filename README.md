@@ -64,6 +64,12 @@ TODO
 - Changelogs should only get attached to single-mod dirs.
 - Figure out something to do with, for instance, mopioid's
   Phaseclock.  Also Robeth's TimeScale?
+- The first time the app is run, without caches to read from, mods
+  which share the name of an author will error out instead of being
+  generated.  That will get fixed on subsequent runs which do read
+  from the cache.  I don't care enough to fix that edge case at the
+  moment, but it may bear looking into later.  (vWolvenn's "Tsunami"
+  is the only current case of this actually happening.)
 - Bugs to look into once I'm more inclined to do real bugfixing:
   - Ethel's `King Bonerfart` mod doesn't actually show the README
     contents, though it does link to the README.  It should really

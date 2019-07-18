@@ -37,22 +37,39 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
             description='BLCM ModCabinet Auto-Sorter',
+
+            # The "defaults" formatter ends up being weird since most of our
+            # booleans are setting False rather than True, so don't use it.
             #formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            epilog="""Use the -g/--no-git or -c/--no-commit options to avoid
+
+            # Note that all text will get mashed together in a single paragraph
+            # regardless of formatting here, so don't sweat that too much.
+            epilog="""
+                Use the -g/--no-git or -c/--no-commit options to avoid
                 git integration, which can be quite useful when you're
                 iterating through code/template changes but probably not of
-                much use otherwise.  The -i/--initial argument will also do an
-                initial "first-time-run" task of looping through the github
-                repo setting all file mtimes to be equal to their most-
-                recently-updated timestamp in the git tree.  By default the
-                app will quit early when no update is found in the mods repo,
-                but -f/--force can be used to force it to continue regardless.
+                much use otherwise.
+
+                The -i/--initial argument will also do an initial
+                "first-time-run" task of looping through the github repo
+                setting all file mtimes to be equal to their most-
+                recently-updated timestamp in the git tree.
+
+                By default the app will quit early when no update is found in
+                the mods repo, but -f/--force can be used to force it to
+                continue regardless.
+
                 -q/--quiet and -v/--verbose can be used to control how much
                 information is printed on the console while running.  With
-                quiet mode, only critical errors will be printed.  The default
-                config file location is at `{}`.  To specify an alternate
-                config file, use -o/--config.  Use the file `cabinetsorter.ini.example`
-                as a basis for the file.
+                quiet mode, only critical errors will be printed.
+
+                The default config file location is at `{}`.  To specify an
+                alternate config file, use -o/--config.  Use the file
+                `cabinetsorter.ini.example` as a basis for the file.
+
+                To ignore any existing caches and make a run from scratch,
+                specify -x/--ignore-cache.
+
                 """.format(default_config_file)
             )
 
@@ -84,6 +101,12 @@ if __name__ == '__main__':
             help='Specify a path to a configuration INI file',
             )
 
+    parser.add_argument('-x', '--ignore-cache',
+            dest='load_cache',
+            action='store_false',
+            help='Ignore any existing cache files and load everything from scratch.',
+            )
+
     loggroup = parser.add_mutually_exclusive_group()
 
     loggroup.add_argument('-q', '--quiet',
@@ -110,4 +133,5 @@ if __name__ == '__main__':
             force_run=args.force,
             quiet=args.quiet,
             verbose=args.verbose,
+            load_cache=args.load_cache,
             ))

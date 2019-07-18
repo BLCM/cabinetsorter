@@ -924,16 +924,18 @@ class FileCache(object):
 
     cache_version = 1
 
-    def __init__(self, cache_class, filename):
+    def __init__(self, cache_class, filename, do_load=True):
         """
         Initialize a FileCache using the given `cache_class` and `filename`.
         `cache_class` should be a `Cacheable` object, or at least one which
-        pretends to be.
+        pretends to be.  If `do_load` is `False`, we will not actually
+        attempt to read anything from the cache, instead pretending that
+        we have a totally clean slate.
         """
         self.cache_class = cache_class
         self.filename = filename
         self.mapping = {}
-        if os.path.exists(filename):
+        if do_load and os.path.exists(filename):
             with lzma.open(filename, 'rt', encoding='utf-8') as df:
                 serialized_dict = json.load(df)
                 if serialized_dict['version'] > self.cache_version:
@@ -1479,15 +1481,8 @@ class App(object):
         self.logger.setLevel(getattr(logging, self.default_log_level))
         self.console = logging.StreamHandler()
         self.console.setFormatter(logging.Formatter('%(levelname)-8s | %(message)s'))
+        self.console.setLevel(getattr(logging, self.default_log_level))
         self.logger.addHandler(self.console)
-
-        # Some initial vars
-        self.mod_cache = FileCache(ModFile, self.cache_filename)
-        self.readme_cache = FileCache(Readme, self.readme_cache_filename)
-        self.info_cache = FileCache(CabinetInfo, self.info_cache_filename)
-        self.author_cache = FileCache(Author, self.author_cache_filename)
-        self.templatemtime_cache = FileCache(TemplateMTime, self.templatemtime_cache_filename)
-        self.error_list = []
 
         # Grab Jinja templates
         jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader('templates'))
@@ -1499,17 +1494,7 @@ class App(object):
         self.author_template = jinja_env.get_template('author.md')
         self.contributing_template = jinja_env.get_template('contributing.md')
 
-        # Initialize templatemtime_cache.  We don't have to do this for
-        # most of our templates because they get generated every time,
-        # but we want it for mods and authors since those otherwise only
-        # get generated if other caches have noticed changes.  We're fudging
-        # some DirInfo stuff a bit, since that class is built with a BLCM
-        # repo in mind.
-        temp_info = DirInfo('', 'templates', ['mod.md', 'author.md'])
-        self.mod_template_mtime = self.templatemtime_cache.load(temp_info, 'mod.md')
-        self.author_template_mtime = self.templatemtime_cache.load(temp_info, 'author.md')
-
-    def run(self, quiet=False, verbose=False, **args):
+    def run(self, load_cache=True, quiet=False, verbose=False, **args):
         """
         Run the app
         """
@@ -1528,6 +1513,26 @@ class App(object):
         # Make a note that we're starting
         self.logger.info('------------------------')
         self.logger.info('Starting Cabinet Sorter!')
+
+        # Initialize our caches
+        if not load_cache:
+            self.logger.info('Skipping cache loading')
+        self.mod_cache = FileCache(ModFile, self.cache_filename, do_load=load_cache)
+        self.readme_cache = FileCache(Readme, self.readme_cache_filename, do_load=load_cache)
+        self.info_cache = FileCache(CabinetInfo, self.info_cache_filename, do_load=load_cache)
+        self.author_cache = FileCache(Author, self.author_cache_filename, do_load=load_cache)
+        self.templatemtime_cache = FileCache(TemplateMTime, self.templatemtime_cache_filename, do_load=load_cache)
+        self.error_list = []
+
+        # Initialize templatemtime_cache.  We don't have to do this for
+        # most of our templates because they get generated every time,
+        # but we want it for mods and authors since those otherwise only
+        # get generated if other caches have noticed changes.  We're fudging
+        # some DirInfo stuff a bit, since that class is built with a BLCM
+        # repo in mind.
+        temp_info = DirInfo('', 'templates', ['mod.md', 'author.md'])
+        self.mod_template_mtime = self.templatemtime_cache.load(temp_info, 'mod.md')
+        self.author_template_mtime = self.templatemtime_cache.load(temp_info, 'author.md')
 
         # Continue
         try:
@@ -1752,6 +1757,9 @@ class App(object):
         # We have one instance of a mod name which happens to also be an author
         # name (vWolvenn's "Tsunami").  This is silly, and causes us to loop through
         # authors twice while processing, but I think I'm fine with that.
+        # NOTE: If running without caches, this will be empty on the very first run,
+        # and you'll get an error for any mod which shares the name of a mod author.
+        # That'll go away on subsequent runs, though.
         author_names = set()
         for author in self.author_cache.values():
             author_names.add(author.name)
