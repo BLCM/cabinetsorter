@@ -69,15 +69,6 @@ TODO
   moment, but it may bear looking into later.  (vWolvenn's "Tsunami"
   is the only current case of this actually happening.)
 - Bugs to look into once I'm more inclined to do real bugfixing:
-  - Ethel's `King Bonerfart` mod doesn't actually show the README
-    contents, though it does link to the README.  It should really
-    include the whole file, given that it's just one line...
-    - Our Lord's `Gunless Unique Drop Sound Notifier` is doing this
-      too, with a more sizeable README
-    - I think this is actually due to multi-mod processing, which
-      makes sense.  In Ethel's case there's two mods in there For
-      Real, and in Our Lord's case it's just specified that way
-      'cause that's what would make sense...
   - Greem's ASCII art (in, for instance, `RarityChanges`) has one
     char in it that we don't strip...
 
