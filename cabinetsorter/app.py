@@ -1646,6 +1646,13 @@ class App(object):
         for filename in to_delete:
             del self.mod_cache[filename]
 
+        # We have one instance of a mod name which happens to also be an author
+        # name (vWolvenn's "Tsunami").  This is silly, and causes us to loop through
+        # authors twice while processing, but I think I'm fine with that.
+        author_names = set()
+        for author in self.author_cache.values():
+            author_names.add(author.name)
+
         # Resolve any mod names -- needed in case more than one mod has the same name.
         # This happens a *bit* within a game itself, and quite a bit across game
         # boundaries.  Note that this needs to happen *before* any categories or
@@ -1682,6 +1689,9 @@ class App(object):
                                     filename_suffix,
                                     game_suffix,
                                     )
+                            if new_filename in author_names:
+                                # This is kind of ridiculous, but it happens once.
+                                new_filename = '{} by {}'.format(new_filename, author_name)
                             mod_obj.set_wiki_filename_base(new_filename)
                             mod_obj.set_title_display(new_title_display)
 

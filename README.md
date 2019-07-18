@@ -38,12 +38,6 @@ made to find out.  Required modules (installable via `pip`, of course):
 TODO
 ----
 
-- Handle duplicate mod names; if it's duplicate between BL2 and TPS,
-  I'd propose having the TPS one have a "TPS" prefix, but it's also
-  not out of the realm of possibility that we may have a duplicate
-  within a single game, too...  Perhaps don't worry about *that*
-  possibility unless it turns out to be a problem.  Right now the
-  second mod will just generate an error and not get a page.
 - Pull some of the config stuff out to a config file
 - README/Mod Description parsing could probably use some tweaking,
   but will have to do that carefully, of course.
@@ -94,11 +88,6 @@ TODO
       'cause that's what would make sense...
   - Greem's ASCII art (in, for instance, `RarityChanges`) has one
     char in it that we don't strip...
-  - Nifsara's multiple `UVHM Rebalance` mods are showing up
-    individually in the `Game Mode Balance` section, but are all
-    linking to the same file (since the category name is the same
-    for all).  Why doesn't this trip our anti-duplicate-name
-    check?
 
 License
 -------
