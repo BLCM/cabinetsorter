@@ -34,6 +34,7 @@ import datetime
 import traceback
 import collections
 import Levenshtein
+import configparser
 import urllib.parse
 
 class Re(object):
@@ -1346,22 +1347,13 @@ class App(object):
     Main app
     """
 
-    # Dirs that we're looking into, and dirs that we're writing to
-    base_url = 'https://github.com/BLCM/BLCMods/tree/master/'
-    dl_base_url = 'https://raw.githubusercontent.com/BLCM/BLCMods/master/'
-    repo_dir = '/home/pez/git/b2patching/BLCMods.cabinet'
+    # Games that we support
     games = collections.OrderedDict([
             ('BL2', Game('BL2', 'Borderlands 2 mods', 'Borderlands 2')),
             ('TPS', Game('TPS', 'Pre Sequel Mods', 'Pre-Sequel')),
             ])
-    cabinet_dir = '/home/pez/git/b2patching/ModSorted.wiki'
-    cache_filename = 'cache/modcache.json.xz'
-    readme_cache_filename = 'cache/readmecache.json.xz'
-    info_cache_filename = 'cache/infocache.json.xz'
-    author_cache_filename = 'cache/authorcache.json.xz'
-    templatemtime_cache_filename = 'cache/templatemtime.json.xz'
-    log_file = 'cabinet.log'
 
+    # Valid Categories
     categories = collections.OrderedDict([
 
         # Major Modpacks
@@ -1452,7 +1444,31 @@ class App(object):
 
         ])
 
-    def __init__(self):
+    def __init__(self, ini_file):
+
+        # Read config values from the INI file
+        self.config = configparser.ConfigParser()
+        if isinstance(ini_file, str):
+            self.config.read(ini_file)
+        else:
+            self.config.read_file(ini_file)
+        self.base_url = self.config['mods']['base_url']
+        self.dl_base_url = self.config['mods']['download_url']
+        self.repo_dir = self.config['mods']['repo_dir']
+        self.cabinet_dir = self.config['wiki']['cabinet_dir']
+        self.cache_dir = self.config['cache']['cache_dir']
+        self.cache_filename = os.path.join(self.cache_dir, 'modcache.json.xz')
+        self.readme_cache_filename = os.path.join(self.cache_dir, 'readmecache.json.xz')
+        self.info_cache_filename = os.path.join(self.cache_dir, 'infocache.json.xz')
+        self.author_cache_filename = os.path.join(self.cache_dir, 'authorcache.json.xz')
+        self.templatemtime_cache_filename = os.path.join(self.cache_dir, 'templatemtime.json.xz')
+        self.log_dir = self.config['logging']['log_dir']
+        self.log_file = os.path.join(self.log_dir, 'cabinetsorter.log')
+        self.default_log_level = self.config['logging']['default_level']
+
+        # Create our logging dir, if it doesn't already exist
+        if not os.path.isdir(self.log_dir):
+            os.mkdir(self.log_dir)
 
         # Set up a logging object
         logging.basicConfig(
@@ -1460,7 +1476,7 @@ class App(object):
                 filename=self.log_file,
                 )
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(getattr(logging, self.default_log_level))
         self.console = logging.StreamHandler()
         self.console.setFormatter(logging.Formatter('%(levelname)-8s | %(message)s'))
         self.logger.addHandler(self.console)

@@ -32,13 +32,14 @@ made to find out.  Required modules (installable via `pip`, of course):
 - `gitpython`
 - `Jinja2`
 - `python-Levenshtein`
+- `appdirs`
 - `coverage` (only to run coverage on the unit tests, for development
   purposes.  Not needed just to run.)
 
 TODO
 ----
 
-- Pull some of the config stuff out to a config file
+- Support doing initial git clones?
 - README/Mod Description parsing could probably use some tweaking,
   but will have to do that carefully, of course.
 - Update unit tests, they're pretty out of date now

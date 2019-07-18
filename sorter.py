@@ -21,11 +21,19 @@
 # along with Borderlands ModCabinet Sorter.  If not, see
 # <https://www.gnu.org/licenses/>.
 
+import os
 import sys
+import appdirs
 import argparse
 from cabinetsorter.app import App
 
 if __name__ == '__main__':
+
+    # Figure out a default INI file location if we weren't passed anything
+    default_config_file = os.path.join(
+            appdirs.user_config_dir('cabinetsorter', 'Apocalyptech'),
+            'cabinetsorter.ini',
+            )
 
     parser = argparse.ArgumentParser(
             description='BLCM ModCabinet Auto-Sorter',
@@ -41,8 +49,11 @@ if __name__ == '__main__':
                 but -f/--force can be used to force it to continue regardless.
                 -q/--quiet and -v/--verbose can be used to control how much
                 information is printed on the console while running.  With
-                quiet mode, only critical errors will be printed.
-                """
+                quiet mode, only critical errors will be printed.  The default
+                config file location is at `{}`.  To specify an alternate
+                config file, use -o/--config.  Use the file `cabinetsorter.ini.example`
+                as a basis for the file.
+                """.format(default_config_file)
             )
 
     parser.add_argument('-g', '--no-git',
@@ -68,6 +79,11 @@ if __name__ == '__main__':
             help='Force update of wiki even if there have not been any repo changes',
             )
 
+    parser.add_argument('-o', '--config',
+            default=default_config_file,
+            help='Specify a path to a configuration INI file',
+            )
+
     loggroup = parser.add_mutually_exclusive_group()
 
     loggroup.add_argument('-q', '--quiet',
@@ -82,7 +98,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    app = App()
+    # Check to make sure our config file exists
+    if not os.path.exists(args.config):
+        raise Exception('Could not find config file {}'.format(args.config))
+
+    app = App(args.config)
     sys.exit(app.run(
             do_git=args.do_git,
             do_git_commit=args.do_git_commit,
