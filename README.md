@@ -41,13 +41,7 @@ TODO
 - Pull some of the config stuff out to a config file
 - README/Mod Description parsing could probably use some tweaking,
   but will have to do that carefully, of course.
-- Proper logging
 - Link to the mod's *directory* instead of the mod file, for "view?"
-- Flag to only update if git has updated?
-  - We don't want to run after *every* commit, because there could
-    be a bunch all at once.  But maybe if we ran every couple of
-    minutes, that could at least be an initial gate.  As opposed
-    to my original plan of every 10/15/whatever minutes.
 - Update unit tests, they're pretty out of date now
   - Make sure to have tests to explicitly check for MUT categories
     on FT and BLCMM files
@@ -69,7 +63,6 @@ TODO
 - Changelogs should only get attached to single-mod dirs.
 - Figure out something to do with, for instance, mopioid's
   Phaseclock.  Also Robeth's TimeScale?
-- Only use HTML links in categories when they're over N items?
 - Use "Intro" as a valid description header to look for, when looking
   for READMEs in single-mod dirs?  PsychoPatate's READMEs seem to
   use that.

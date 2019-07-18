@@ -21,6 +21,7 @@
 # along with Borderlands ModCabinet Sorter.  If not, see
 # <https://www.gnu.org/licenses/>.
 
+import sys
 import argparse
 from cabinetsorter.app import App
 
@@ -35,7 +36,12 @@ if __name__ == '__main__':
                 much use otherwise.  The -i/--initial argument will also do an
                 initial "first-time-run" task of looping through the github
                 repo setting all file mtimes to be equal to their most-
-                recently-updated timestamp in the git tree.
+                recently-updated timestamp in the git tree.  By default the
+                app will quit early when no update is found in the mods repo,
+                but -f/--force can be used to force it to continue regardless.
+                -q/--quiet and -v/--verbose can be used to control how much
+                information is printed on the console while running.  With
+                quiet mode, only critical errors will be printed.
                 """
             )
 
@@ -57,10 +63,31 @@ if __name__ == '__main__':
             help='Do some first-time-run initial tasks to get the github repo dir ready',
             )
 
+    parser.add_argument('-f', '--force',
+            action='store_true',
+            help='Force update of wiki even if there have not been any repo changes',
+            )
+
+    loggroup = parser.add_mutually_exclusive_group()
+
+    loggroup.add_argument('-q', '--quiet',
+            action='store_true',
+            help='Supress all but critical error messages',
+            )
+
+    loggroup.add_argument('-v', '--verbose',
+            action='store_true',
+            help='Print as much information as possible',
+            )
+
     args = parser.parse_args()
 
     app = App()
-    app.run(
+    sys.exit(app.run(
             do_git=args.do_git,
             do_git_commit=args.do_git_commit,
-            do_initial_tasks=args.do_initial_tasks)
+            do_initial_tasks=args.do_initial_tasks,
+            force_run=args.force,
+            quiet=args.quiet,
+            verbose=args.verbose,
+            ))

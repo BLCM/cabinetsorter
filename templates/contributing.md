@@ -37,11 +37,11 @@ so its `cabinet.info` file looks like this:
 
 ## Update Frequency / Error Reporting
 
-The process which updates the ModCabinet wiki updates every ten minutes.
-You can see when it was last updated by visiting the [[Wiki Status]]
-page.  That page will also show you any errors which happened during the last
-update.  If you had a typo in one of your category names, or something, it will
-show up on that page.
+The process which updates the ModCabinet wiki checks for new/changed files
+every ten minutes.  You can see when the wiki was last updated by visiting
+the [[Wiki Status]] page.  That page will also show you any errors which
+happened during the last update.  If you had a typo in one of your category
+names, or something, it will show up on that page.
 
 ## Screenshots and Nexus Mods Links
 

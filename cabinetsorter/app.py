@@ -23,12 +23,15 @@
 
 import os
 import re
+import sys
 import git
 import json
 import lzma
 import html
 import jinja2
+import logging
 import datetime
+import traceback
 import collections
 import Levenshtein
 import urllib.parse
@@ -1350,6 +1353,7 @@ class App(object):
     info_cache_filename = 'cache/infocache.json.xz'
     author_cache_filename = 'cache/authorcache.json.xz'
     templatemtime_cache_filename = 'cache/templatemtime.json.xz'
+    log_file = 'cabinet.log'
 
     categories = collections.OrderedDict([
 
@@ -1443,6 +1447,17 @@ class App(object):
 
     def __init__(self):
 
+        # Set up a logging object
+        logging.basicConfig(
+                format='%(asctime)-15s - %(levelname)s - %(message)s',
+                filename=self.log_file,
+                )
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+        self.console = logging.StreamHandler()
+        self.console.setFormatter(logging.Formatter('%(levelname)-8s | %(message)s'))
+        self.logger.addHandler(self.console)
+
         # Some initial vars
         self.mod_cache = FileCache(ModFile, self.cache_filename)
         self.readme_cache = FileCache(Readme, self.readme_cache_filename)
@@ -1471,14 +1486,58 @@ class App(object):
         self.mod_template_mtime = self.templatemtime_cache.load(temp_info, 'mod.md')
         self.author_template_mtime = self.templatemtime_cache.load(temp_info, 'author.md')
 
-    def run(self, do_git=True, do_git_commit=True, do_initial_tasks=False):
+    def run(self, quiet=False, verbose=False, **args):
         """
         Run the app
         """
 
+        retval = 0
+
+        # Set our console loglevel.
+        if quiet:
+            self.console.setLevel(logging.ERROR)
+        elif verbose:
+            self.console.setLevel(logging.DEBUG)
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.console.setLevel(logging.INFO)
+
+        # Make a note that we're starting
+        self.logger.info('------------------------')
+        self.logger.info('Starting Cabinet Sorter!')
+
+        # Continue
+        try:
+            self._run(**args)
+        except Exception as e:
+            self.logger.critical('Unhandled exception: {}'.format(str(e)))
+            for tb_line in traceback.format_exception(*sys.exc_info()):
+                for nibble in tb_line.split("\n"):
+                    if nibble != '':
+                        self.logger.critical(nibble.rstrip())
+            retval = 1
+
+        # Make a note that we're ending
+        self.logger.info('Cabinet Sorter has finished')
+
+        # Exit
+        return retval
+
+    def _run(self,
+            do_git=True,
+            do_git_commit=True,
+            do_initial_tasks=False,
+            force_run=False,
+            ):
+        """
+        Actual function to do most of the work.
+        """
+
         # If we've been told to do initial tasks, do those first
         if do_initial_tasks:
+            self.logger.info('Performing initial setup tasks.  This may take awhile')
             self.do_initial_tasks()
+            self.logger.info('Done with initial setup tasks')
 
         # Keep track of which categories we've seen
         seen_cats = {}
@@ -1493,6 +1552,7 @@ class App(object):
         created_pages = set([status_filename, sidebar_filename, contributing_filename])
 
         # Anything in our static_pages dir should be reserved
+        self.logger.debug('Reading in static pages')
         static_pages = {}
         for filename in os.listdir('static_pages'):
             full_filename = os.path.join('static_pages', filename)
@@ -1508,10 +1568,24 @@ class App(object):
 
         # Pull down the latest repo
         if do_git:
+            self.logger.debug('Pulling mods repo from git')
             modsrepo = git.Repo(self.repo_dir)
+            before_hash = modsrepo.head.object.hexsha
             modsrepo.git.pull()
+            after_hash = modsrepo.head.object.hexsha
+            if before_hash == after_hash:
+                if force_run:
+                    self.logger.info('No update found for mods repo, continuing anyway')
+                else:
+                    self.logger.info('No update found for mods repo')
+                    return
+            else:
+                self.logger.debug('Update found, continuing')
+        else:
+            self.logger.info('Skipping mods repo pull')
 
         # Loop through our game dirs
+        self.logger.debug('Beginning walkthrough of repo directory')
         name_resolution = {}
         for game in self.games.values():
             game_dir = os.path.join(self.repo_dir, game.dir_name)
@@ -1611,6 +1685,11 @@ class App(object):
                             name_resolution[processed_file.mod_title][game][processed_file.mod_author] = {}
                         name_resolution[processed_file.mod_title][game][processed_file.mod_author][processed_file.rel_filename] = processed_file.full_filename
 
+        # Report that we're done
+        self.logger.debug('Finished looping through mods directory')
+        for e in self.error_list:
+            self.logger.warning('Processing error while looping: {}'.format(e))
+
         # Some console reporting, for interactive testing.
         if False:
             for mod in self.mod_cache.values():
@@ -1644,6 +1723,7 @@ class App(object):
             if not mod.seen:
                 to_delete.append(filename)
         for filename in to_delete:
+            self.logger.info('Marking for deletion: {}'.format(filename))
             del self.mod_cache[filename]
 
         # We have one instance of a mod name which happens to also be an author
@@ -1657,6 +1737,7 @@ class App(object):
         # This happens a *bit* within a game itself, and quite a bit across game
         # boundaries.  Note that this needs to happen *before* any categories or
         # author pages are written out.
+        self.logger.debug('Resolving mod name conflicts')
         for (mod_title, mod_games) in name_resolution.items():
             need_game = (len(mod_games) > 1)
             for (game, mod_authors) in mod_games.items():
@@ -1706,16 +1787,21 @@ class App(object):
         # Pull down the most recent wiki revision (nobody "should" be editing this
         # manually, but I'm sure it'll happen eventually)
         if do_git:
+            self.logger.debug('Pulling wiki repo from git')
             wikirepo = git.Repo(self.cabinet_dir)
             wikirepo.git.pull()
+        else:
+            self.logger.info('Skipping wiki repo pull')
 
         # Get a list of files currently in the wiki
+        self.logger.debug('Getting current list of wiki files')
         wiki_files = set()
         for filename in os.listdir(self.cabinet_dir):
             if os.path.isfile(os.path.join(self.cabinet_dir, filename)):
                 wiki_files.add(filename)
 
         # Write out updated static pages, if need be
+        self.logger.debug('Writing out static pages')
         for (filename, content) in static_pages.items():
             created_pages.add(filename)
             self.write_wiki_file(wiki_files,
@@ -1724,6 +1810,7 @@ class App(object):
                     )
 
         # Write out game and category pages
+        self.logger.debug('Writing out game and category pages')
         multi_game_cats = {}
         for game in self.games.values():
             game_cats = []
@@ -1757,6 +1844,7 @@ class App(object):
                     )
 
         # Write out sidebar
+        self.logger.debug('Writing sidebar')
         self.write_wiki_file(wiki_files,
                 sidebar_filename,
                 self.sidebar_template.render({
@@ -1767,6 +1855,7 @@ class App(object):
                 )
 
         # Write out 'contributing' page
+        self.logger.debug('Writing contributing page')
         self.write_wiki_file(wiki_files,
                 contributing_filename,
                 self.contributing_template.render({
@@ -1775,12 +1864,18 @@ class App(object):
                 )
 
         # Write out Author pages
+        self.logger.debug('Writing author pages')
         for author in self.author_cache.values():
             author_filename = author.wiki_filename()
             if author_filename in reserved_pages:
-                self.error_list.append('ERROR: Author `{}` uses a reserved name'.format(author_filename))
+                e = 'ERROR: Author `{}` uses a reserved name'.format(author_filename)
+                self.logger.warning('Processing error: {}'.format(e))
+                self.error_list.append(e)
             elif author_filename in created_pages:
-                self.error_list.append('ERROR: Author `{}` has the same name as an already-created mod'.format(author_filename))
+                e = 'ERROR: Author `{}` has the same name as an already-created file'.format(
+                        author_filename)
+                self.logger.warning('Processing error: {}'.format(e))
+                self.error_list.append(e)
             else:
                 created_pages.add(author_filename)
                 # Make sure that author.check_modlist() gets called regardless of any
@@ -1798,12 +1893,17 @@ class App(object):
                             }))
 
         # Write out our individual mods
+        self.logger.debug('Writing individual mod pages')
         for mod in self.mod_cache.values():
             mod_filename = mod.wiki_filename()
             if mod_filename in reserved_pages:
-                self.error_list.append('ERROR: `{}` uses a reserved name'.format(mod.get_full_rel_filename()))
+                e = 'ERROR: `{}` uses a reserved name'.format(mod.get_full_rel_filename())
+                self.logger.warning('Processing error: {}'.format(e))
+                self.error_list.append(e)
             elif mod_filename in created_pages:
-                self.error_list.append('ERROR: `{}` has the same name as an already-created mod'.format(mod.get_full_rel_filename()))
+                e = 'ERROR: `{}` has the same name as an already-created file'.format(mod.get_full_rel_filename())
+                self.logger.warning('Processing error: {}'.format(e))
+                self.error_list.append(e)
             else:
                 created_pages.add(mod_filename)
                 if (self.mod_template_mtime.status != TemplateMTime.S_CACHED
@@ -1821,6 +1921,7 @@ class App(object):
                         df.write(content)
 
         # Finally, our 'Status' page.  This always gets written.
+        self.logger.debug('Writing status page')
         with open(os.path.join(self.cabinet_dir, status_filename), 'w') as df:
             content = self.status_template.render({
                 'gen_time': datetime.datetime.now(datetime.timezone(datetime.timedelta())),
@@ -1831,28 +1932,38 @@ class App(object):
         # Commit-related git actions
         if do_git and do_git_commit:
 
+            self.logger.debug('Prepping for wiki repo commit')
+
             # Delete pages which no longer exist
             for filename in wiki_files:
                 if filename not in created_pages:
                     try:
+                        self.logger.debug('Marking file for deletion: {}'.format(filename))
                         wikirepo.git.rm('--', filename)
                     except git.exc.GitCommandError as e:
                         # If I have a file open or whatever in here with a .swp file, or
                         # if some file exists which is outside the repo, we'll get this
                         # error.  Let's not die just because of that.
-                        print('Could not "git rm" on filename: {}'.format(filename))
+                        self.logger.error('Could not "git rm" on filename: {}'.format(filename))
 
             # Mark any new files as to-be-added
             for filename in wikirepo.untracked_files:
+                self.logger.debug('Marking file for addition: {}'.format(filename))
                 wikirepo.git.add('--', filename)
 
             # Commit all wiki changes and push, if we need to (which we should, since About
             # always gets updated)
             if wikirepo.is_dirty():
+                self.logger.debug('Committing wiki repo changes')
                 wikirepo.git.commit('-a', '-m', 'Auto-update from cabinetsorter')
                 wikirepo.git.push()
+            else:
+                self.logger.debug('No git changes to commit')
+        else:
+            self.logger.info('Skipping wiki repo commit')
 
         # Write out our mod cache
+        self.logger.debug('Writing caches')
         self.mod_cache.save()
         self.readme_cache.save()
         self.info_cache.save()
