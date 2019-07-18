@@ -3,6 +3,7 @@
 - [[Main Page|Home]]
 - [[About ModCabinet Wiki]]
 - [[Contributing to ModCabinet]]
+- [[Mod Categories]]
 - [[Wiki Status]]
 
 {%- for game in games %}

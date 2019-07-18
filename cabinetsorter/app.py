@@ -1492,7 +1492,7 @@ class App(object):
         self.status_template = jinja_env.get_template('status.md')
         self.sidebar_template = jinja_env.get_template('sidebar.md')
         self.author_template = jinja_env.get_template('author.md')
-        self.contributing_template = jinja_env.get_template('contributing.md')
+        self.category_template = jinja_env.get_template('categories.md')
 
     def run(self, load_cache=True, quiet=False, verbose=False, **args):
         """
@@ -1575,9 +1575,9 @@ class App(object):
         # Set up a reserved and created pages set
         status_filename = 'Wiki-Status.md'
         sidebar_filename = '_Sidebar.md'
-        contributing_filename = 'Contributing-to-ModCabinet.md'
-        reserved_pages = set([status_filename, sidebar_filename, contributing_filename])
-        created_pages = set([status_filename, sidebar_filename, contributing_filename])
+        category_filename = 'Mod-Categories.md'
+        reserved_pages = set([status_filename, sidebar_filename, category_filename])
+        created_pages = set([status_filename, sidebar_filename, category_filename])
 
         # Anything in our static_pages dir should be reserved
         self.logger.debug('Reading in static pages')
@@ -1899,11 +1899,11 @@ class App(object):
                     })
                 )
 
-        # Write out 'contributing' page
-        self.logger.debug('Writing contributing page')
+        # Write out 'categories' page
+        self.logger.debug('Writing categories page')
         self.write_wiki_file(wiki_files,
-                contributing_filename,
-                self.contributing_template.render({
+                category_filename,
+                self.category_template.render({
                     'categories': self.categories,
                     })
                 )

@@ -3,13 +3,7 @@
 Contributing to the ModCabinet wiki is quite easy if you've already checked
 in your mod to the Github.  Just include a file named `cabinet.info` alongside
 your mod(s) to specify the category you'd like to use for the mods.  The
-current valid categories are:
-
-| Category Name | Description |
-| --- | --- |
-{%- for catname, cat in categories.items() %}
-| `{{ catname }}` | {{ cat.full_title }}
-{%- endfor %}
+current valid categories are listed on the [[Mod Categories]] page.
 
 ## Assigning Categories
 

@@ -58,9 +58,6 @@ TODO
     links, when calling `wiki_link`
   - In `ModFile.load_unknown()`, check for FT-style categories
   - Strip square brackets from ASCII art
-- Maybe move category list to its own "static" page, so the
-  "Contributing" page doesn't have that huge table before the
-  instructions?  Or at least move the table down near the bottom?
 - Figure out something to do with, for instance, mopioid's
   Phaseclock.  Also Robeth's TimeScale?
 - The first time the app is run, without caches to read from, mods
