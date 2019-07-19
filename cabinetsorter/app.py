@@ -1448,7 +1448,6 @@ class App(object):
 
         # Audio and Visual
         ('av', Category('Audio and Visual: General A/V Settings')),
-        ('particles', Category('Audio and Visual: Particles')),
         ('ui', Category('Audio and Visual: UI Changes')),
         ('av-gear', Category('Audio and Visual: Weapon and Gear Visuals')),
         ('av-char', Category('Audio and Visual: Character Visuals')),
