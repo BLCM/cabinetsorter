@@ -391,6 +391,7 @@ class ModFile(Cacheable):
         self.urls = []
         self.categories = set()
         self.changelog = []
+        self.related_links = []
         self.re = Re()
         self.game = game
 
@@ -458,6 +459,7 @@ class ModFile(Cacheable):
                 'r': self.readme_desc,
                 'l': self.readme_rel,
                 'o': self.changelog,
+                'e': sorted(self.related_links),
                 'n': nl,
                 's': [str(s) for s in self.screenshots],
                 'y': [str(y) for y in self.youtube_urls],
@@ -481,6 +483,7 @@ class ModFile(Cacheable):
         self.readme_desc = input_dict['r']
         self.readme_rel = input_dict['l']
         self.changelog = input_dict['o']
+        self.related_links = set(input_dict['e'])
         if input_dict['n']:
             self.nexus_link = ModURL(input_dict['n'])
         else:
@@ -527,6 +530,18 @@ class ModFile(Cacheable):
             if self.status != Cacheable.S_NEW:
                 self.status = Cacheable.S_UPDATED
             self.wiki_filename_base = wiki_filename_base
+
+    def set_related_links(self, related_mods):
+        """
+        Sets our new related links given a set of other mods
+        """
+        new_links = sorted(
+            ['{}, by {}'.format(m.wiki_link(), m.mod_author) for m in related_mods]
+            )
+        if new_links != self.related_links:
+            if self.status != Cacheable.S_NEW:
+                self.status = Cacheable.S_UPDATED
+            self.related_links = new_links
 
     def set_urls(self, urls):
         """
@@ -1782,6 +1797,7 @@ class App(object):
         # author pages are written out.
         self.logger.debug('Resolving mod name conflicts')
         for (mod_title, mod_games) in name_resolution.items():
+            shared_set = set()
             need_game = (len(mod_games) > 1)
             for (game, mod_authors) in mod_games.items():
                 if need_game:
@@ -1830,6 +1846,7 @@ class App(object):
                             # Now set our information
                             mod_obj.set_wiki_filename_base(new_filename)
                             mod_obj.set_title_display(new_title_display)
+                            shared_set.add(mod_obj)
 
                             # Add this mod to an author obj
                             if mod_obj.mod_author:
@@ -1838,6 +1855,10 @@ class App(object):
                                             initial_status=Author.S_NEW,
                                             name=mod_obj.mod_author)
                                 self.author_cache[mod_obj.mod_author].add_mod(mod_obj)
+
+            # Now, have each of the mods with a shared name link over to each other.
+            for mod_obj in shared_set:
+                mod_obj.set_related_links(shared_set - {mod_obj})
 
         # Pull down the most recent wiki revision (nobody "should" be editing this
         # manually, but I'm sure it'll happen eventually)

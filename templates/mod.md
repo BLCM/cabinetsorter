@@ -6,6 +6,14 @@
 
 **In Categories:** {{ mod.get_cat_links(cats) }}
 
+{%- if mod.related_links|length > 0 %}
+
+**Other mods with the same name:**
+{% for link in mod.related_links %}
+- {{ link }}
+{% endfor %}
+{%- endif %}
+
 ## Download Methods
 
 <table>

@@ -72,6 +72,8 @@ TODO
   and it looks like there's nothing to do.  I think we'll have to
   cache the git commit at which we last successfully run, and compare
   against that.
+- See if we can get rid of our `full_filename` var in ModFile.  I bet
+  we can...
 
 License
 -------
