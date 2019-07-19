@@ -1,6 +1,7 @@
 **Wiki Links**
 
 - [[Main Page|Home]]
+- [[Searching]]
 - [[About ModCabinet Wiki]]
 - [[Contributing to ModCabinet]]
 - [[Mod Categories]]

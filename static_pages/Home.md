@@ -22,3 +22,4 @@ Wiki](https://github.com/BLCM/BLCMods/wiki) is your best starting point.
 
 - [[About ModCabinet Wiki]]
 - [[Contributing to ModCabinet]]
+- [[Searching on the Wiki|Searching]]
