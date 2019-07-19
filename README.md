@@ -60,7 +60,7 @@ TODO
   - Strip square brackets from ASCII art
   - Test `__eq__` on ModURL objects for the various tests in there
 - Figure out something to do with, for instance, mopioid's
-  Phaseclock.  Also Robeth's TimeScale?
+  Phaseclock.  Also Robeth's TimeScale?  Also Aaron0000's Pandemonium.
 - The first time the app is run, without caches to read from, mods
   which share the name of an author will error out instead of being
   generated.  That will get fixed on subsequent runs which do read
