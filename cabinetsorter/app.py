@@ -361,6 +361,8 @@ class ModURL(object):
             return self.url
 
     def __eq__(self, other):
+        if not other:
+            return False
         if self.url and not other.url:
             return False
         if other.url and not self.url:
@@ -1251,15 +1253,19 @@ def wiki_filename(page_title, with_ext=True):
         format_str = '{}'
     return format_str.format(page_title.replace(' ', '-').replace('/', '-'))
 
-def wiki_link_html(text, link):
+def wiki_link_html(text, link, external=False):
     """
     Construct a wiki link *specifically* as an HTML link, rather than markdown.
     Doing this appears to make page rendering take fewer resources, which has
     become a problem on our larger category pages like Pistols.
     """
+    if external:
+        href = link
+    else:
+        href = urllib.parse.quote(link.replace('/', ' '))
     return '<a href="{}">{}</a>'.format(
             #html.escape(link.replace('/', ' ')),
-            urllib.parse.quote(link.replace('/', ' ')),
+            href,
             html.escape(text),
             )
 
@@ -1268,7 +1274,7 @@ def wiki_link(text, link, external=False):
     Redirects to wiki_link_html.  "Real" wiki links are just too dangerous on
     Github wiki -- too many and pages become unrenderable.
     """
-    return wiki_link_html(text, link)
+    return wiki_link_html(text, link, external)
 
 def wiki_link_disabled(text, link, external=False):
     """

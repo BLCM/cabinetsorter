@@ -58,6 +58,7 @@ TODO
     links, when calling `wiki_link`
   - In `ModFile.load_unknown()`, check for FT-style categories
   - Strip square brackets from ASCII art
+  - Test `__eq__` on ModURL objects for the various tests in there
 - Figure out something to do with, for instance, mopioid's
   Phaseclock.  Also Robeth's TimeScale?
 - The first time the app is run, without caches to read from, mods
@@ -66,6 +67,11 @@ TODO
   from the cache.  I don't care enough to fix that edge case at the
   moment, but it may bear looking into later.  (vWolvenn's "Tsunami"
   is the only current case of this actually happening.)
+- If we get a CRITICAL error midway through processing, the next run
+  will *not* try again, because the `git pull` has already happened
+  and it looks like there's nothing to do.  I think we'll have to
+  cache the git commit at which we last successfully run, and compare
+  against that.
 
 License
 -------
