@@ -18,10 +18,10 @@ bunch of effectively freeform text all over the place, but hopefully it
 can be wrangled into something useful, which can then be run every 15
 minutes or something.
 
-At the moment, this is still very much in development (and as of time of
-writing doesn't even attempt to write out any wiki documents of any sort),
-so buyer beware.  Once this thing approaches Actual Functionality, this
-README will get cleaned up and some actual documentation provided.
+At the moment, the app works quite well, with the caveats of the items
+noted in the TODO below.  I will eventually get some better documentation
+in here about how to get this running, in case anyone else ever needs/wants
+to take over generating these pages.
 
 Requirements
 ------------
