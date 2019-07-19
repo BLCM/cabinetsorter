@@ -3,3 +3,4 @@ cache/*.json.xz
 **/__pycache__
 .coverage
 cabinet.log
+repos
