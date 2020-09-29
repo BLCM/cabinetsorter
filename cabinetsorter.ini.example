@@ -1,12 +1,12 @@
 [mods]
-clone_url = git@github.com-githubusername:BLCM/BLCMods
+clone_url = https://github.com/BLCM/BLCMods.git
 base_url = https://github.com/BLCM/BLCMods/tree/master/
 download_url = https://raw.githubusercontent.com/BLCM/BLCMods/master/
-repo_dir = /home/username/git/BLCMods.cabinet
+repo_dir = /home/username/cabinetsorter/repos/BLCMods
 
 [wiki]
 clone_url = git@github.com-githubusername:BLCM/ModCabinet.wiki.git
-cabinet_dir = /home/username/git/ModSorted.wiki
+cabinet_dir = /home/username/cabinetsorter/repos/ModSorted.wiki
 
 [cache]
 cache_dir = cache
