@@ -151,6 +151,7 @@ TODO
   - In `ModFile.load_unknown()`, check for FT-style categories
   - Strip square brackets from ASCII art
   - Test `__eq__` on ModURL objects for the various tests in there
+  - The new `@no-mod-comment` style directives in `cabinet.info` files
 - Figure out something to do with, for instance, mopioid's
   Phaseclock.  Also Robeth's TimeScale?  Also Aaron0000's Pandemonium.
 - The first time the app is run, without caches to read from, mods

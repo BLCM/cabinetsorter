@@ -383,6 +383,7 @@ class ModFile(Cacheable):
         self.mod_title_display = None
         self.wiki_filename_base = None
         self.mod_desc = []
+        self.use_mod_desc = True
         self.readme_rel = None
         self.readme_desc = []
         self.nexus_link = None
@@ -456,6 +457,7 @@ class ModFile(Cacheable):
                 't': self.mod_title,
                 'i': self.mod_title_display,
                 'd': self.mod_desc,
+                'q': self.use_mod_desc,
                 'r': self.readme_desc,
                 'l': self.readme_rel,
                 'o': self.changelog,
@@ -480,6 +482,7 @@ class ModFile(Cacheable):
         self.mod_title = input_dict['t']
         self.mod_title_display = input_dict['i']
         self.mod_desc = input_dict['d']
+        self.use_mod_desc = input_dict['q']
         self.readme_desc = input_dict['r']
         self.readme_rel = input_dict['l']
         self.changelog = input_dict['o']
@@ -575,6 +578,18 @@ class ModFile(Cacheable):
         self.nexus_link = nexus_link
         self.youtube_urls = youtube_urls
         self.urls = new_urls
+
+    def update_use_mod_desc(self, use_mod_desc):
+        """
+        Sets our flag which tells the sorter whether or not to put
+        the in-mod description onto the ModCabinet page.  This will
+        update our status to S_UPDATED if need be.
+        """
+        self.seen = True
+        if (self.status != Cacheable.S_NEW
+                and self.use_mod_desc != use_mod_desc):
+            self.status = Cacheable.S_UPDATED
+        self.use_mod_desc = use_mod_desc
 
     def update_readme_desc(self, readme, new_desc):
         """
@@ -1053,6 +1068,7 @@ class CabinetModInfo(object):
         self.filename = filename
         self.categories = categories
         self.urls = []
+        self.use_in_mod_desc = True
     
     def add_url(self, url):
         self.urls.append(url)
@@ -1065,6 +1081,7 @@ class CabinetModInfo(object):
                 'f': self.filename,
                 'c': self.categories,
                 'u': self.urls,
+                'd': self.use_in_mod_desc,
                 }
 
     def unserialize(self, input_dict):
@@ -1074,6 +1091,10 @@ class CabinetModInfo(object):
         self.filename = input_dict['f']
         self.categories = input_dict['c']
         self.urls = input_dict['u']
+        if 'd' in input_dict:
+            self.use_in_mod_desc = input_dict['d']
+        else:
+            self.use_in_mod_desc = True
 
 class CabinetInfo(Cacheable):
     """
@@ -1172,6 +1193,23 @@ class CabinetInfo(Cacheable):
                     self.errors = True
                     self.error_list.append('ERROR: Did not find previous modfile but got URL, in `{}`'.format(
                         self.rel_filename))
+            elif line.startswith('@'):
+                directive = line.strip()[1:]
+                if prev_modfile in self.mods:
+                    if directive == 'no-mod-comments':
+                        self.mods[prev_modfile].use_in_mod_desc = False
+                    else:
+                        self.errors = True
+                        self.error_list.append('ERROR: Unknown directive `{}`, in `{}`'.format(
+                            directive,
+                            self.rel_filename,
+                            ))
+                else:
+                    self.errors = True
+                    self.error_list.append('ERROR: Did not find the previous modfile but got directive `{}`, in `{}`'.format(
+                        directive,
+                        self.rel_filename,
+                        ))
             else:
                 if ': ' in line:
                     if self.single_mod:
@@ -1723,6 +1761,9 @@ class App(object):
 
                         # Set our URLs (likewise, if from cache then they may have changed)
                         processed_file.set_urls(cabinet_info_mod.urls)
+
+                        # Set our boolean to use the in-mod description or not
+                        processed_file.update_use_mod_desc(cabinet_info_mod.use_in_mod_desc)
 
                         # Previously we were adding mods to our author cache here, but we need
                         # to wait until we resolve any potential mod name conflicts first, so

@@ -8,6 +8,7 @@ in your mod to the Github.  Here's how!
 - [Assigning Multiple Categories](#assigning-multiple-categories)
 - [Update Frequency / Error Reporting](#update-frequency--error-reporting)
 - [Screenshots and Nexus Mods Links](#screenshots-and-nexus-mods-links)
+- [Omitting In-Mod Comments](#omitting-in-mod-comments)
 - [Comments](#comments)
 - [Mods Whose Filenames Start With A Hash Sign](#mods-whose-filenames-start-with-a-hash-sign-)
 - [Formatting your README for Maximum Results](#formatting-your-readme-for-maximum-results)
@@ -86,6 +87,24 @@ and separating them with a pipe (`|`) character:
 
 If a URL ends in `.jpg`, `.gif`, or `.png`, it will be embedded into the
 cabinet page.  Youtube URLs will be displayed separately from other URLs.
+
+## Omitting In-Mod Comments
+
+By default, the top set of comments in your mod file will be added to
+the cabinet page, but sometimes you might not want that.  (For instance,
+the info might be entirely duplicated in your README.)  To disable this
+functionality, you can add an extra line reading `@no-mod-comments`
+underneath your category or mod line, like so:
+
+    gear-general
+    @no-mod-comments
+
+Or for a directory with multiple mods:
+
+    BastardV3.txt: gear-general
+    CatO'NineTails.txt: gear-general
+    @no-mod-comments
+    DarlinV2.txt: gear-general
 
 ## Comments
 

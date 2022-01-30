@@ -55,7 +55,7 @@
 
 {#- -------------------- In-Mod Description -------------------- #}
 
-{%- if mod.mod_desc|length > 0 %}
+{%- if mod.use_mod_desc and mod.mod_desc|length > 0 %}
 
 ## Description (from inside mod)
 
