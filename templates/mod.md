@@ -19,7 +19,7 @@
 <table>
 <tr>
 <td align="center">
-<b><a href="{{ dl_base_url }}{{ mod.rel_url() }}">Download from Github</a></b>
+<b><a href="{{ dl_base_url }}{{ mod.rel_url() }}">Link to Mod File</a></b>
 <br/>
 <em>(right click and "Save Link As")</em>
 </td>
